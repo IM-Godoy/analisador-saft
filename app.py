@@ -150,7 +150,7 @@ def injetar_fundo_tunel_suave():
 
 injetar_fundo_tunel_suave()
 
-# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
+# ---------------- ESTILOS VISUAIS: TEMA EXECUTIVO CORPORATIVO ----------------
 st.markdown("""
     <style>
     html, body, .stApp, [data-testid="stAppViewContainer"], .main {
@@ -547,7 +547,7 @@ else:
         total_docs = len(faturas_positivas)
         ticket_medio = fat_liquida / total_docs if total_docs > 0 else 0
 
-        # Análise de Concentração (calculada sobre o volume bruto positivo para evitar distorções)
+        # Análise de Concentração
         df_clientes_positivo = df[df['ValorBruto'] > 0].groupby('Cliente')['ValorBruto'].sum().sort_values(ascending=False).reset_index()
         total_bruto_pos = df_clientes_positivo['ValorBruto'].sum()
         
@@ -664,12 +664,11 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (DARK MODE PROFISSIONAL)
+        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (TEMA EXECUTIVO CORPORATIVO)
         with tab_plano:
             st.markdown("#### 📄 Relatório Executivo Avançado (Pronto a Descarregar)")
-            st.caption("Descarregue o relatório detalhado num layout corporativo Dark Mode de altíssimo nível, contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
+            st.caption("Descarregue o relatório detalhado num layout corporativo avançado, contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
             
-            # Geração das linhas detalhadas de clientes para o relatório HTML rico
             html_linhas = ""
             for _, row in df_clientes_positivo.head(25).iterrows():
                 p_cli = (row['ValorBruto'] / total_bruto_pos * 100) if total_bruto_pos > 0 else 0
@@ -681,7 +680,6 @@ else:
                 </tr>
                 """
 
-            # Geração do sumário de IVA para o relatório HTML
             html_iva_linhas = ""
             if not df_tax.empty:
                 df_tax_resumo = df_tax.groupby(['TaxCode', 'TaxRate'])[['Base', 'ValorIVA']].sum().reset_index()
@@ -768,7 +766,7 @@ else:
             </html>"""
 
             st.download_button(
-                label="📥 Descarregar Relatório Executivo Avançado (Dark Mode HTML)",
+                label="📥 Descarregar Relatório Executivo Avançado (Tema Executivo HTML)",
                 data=html_doc,
                 file_name="relatorio_saft_executivo_avancado.html",
                 mime="text/html"
