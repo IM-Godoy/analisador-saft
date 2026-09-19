@@ -156,7 +156,7 @@ def injetar_fundo_tunel(animating=True):
     
     components.html(tunel_html, height=0)
 
-# ---------------- ESTILOS VISUAIS GLOBAIS (FUNDO TRANSPARENTE) ----------------
+# ---------------- ESTILOS VISUAIS GLOBAIS (LAYOUT FLUIDO / LARGURA TOTAL) ----------------
 st.markdown("""
     <style>
     html, body, .stApp, [data-testid="stAppViewContainer"], .main {
@@ -186,10 +186,14 @@ st.markdown("""
         overflow: hidden !important;
     }
 
+    /* Expande o contentor para ocupar a largura total do ecrã com margens confortáveis nas pontas */
     .block-container {
         position: relative !important;
         z-index: 10 !important;
-        max-width: 1200px !important;
+        max-width: 96% !important;
+        width: 100% !important;
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
         padding-top: 2rem !important;
     }
 
