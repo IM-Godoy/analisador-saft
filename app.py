@@ -24,8 +24,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTOR 3D: TÚNEL HIPER-IMERSIVO (EXCLUSIVO PARA A PÁGINA INICIAL) ----------------
-def injetar_fundo_tunel_imersivo():
+# ---------------- MOTOR 3D: TÚNEL LENTO E SÓBRIO (EXCLUSIVO PARA A PÁGINA INICIAL) ----------------
+def injetar_fundo_tunel_lento():
     tunel_html = """
     <!DOCTYPE html>
     <html>
@@ -43,7 +43,7 @@ def injetar_fundo_tunel_imersivo():
         <script>
             const canvas = document.getElementById('bg-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030609, 0.035);
+            scene.fog = new THREE.FogExp2(0x030609, 0.04);
 
             const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.z = 4.0;
@@ -52,11 +52,11 @@ def injetar_fundo_tunel_imersivo():
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // Anéis estruturais do túnel imersivo
-            const ringCount = 60;
+            # Anéis estruturais do túnel
+            const ringCount = 50;
             const rings = [];
             const sides = 6;
-            const radius = 4.2;
+            const radius = 4.0;
             const ringPts = [];
 
             for (let s = 0; s <= sides; s++) {
@@ -66,39 +66,39 @@ def injetar_fundo_tunel_imersivo():
             const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
 
             for (let i = 0; i < ringCount; i++) {
-                const isAccent = (i % 3 === 0);
+                const isAccent = (i % 4 === 0);
                 const ringMat = new THREE.LineBasicMaterial({
                     color: isAccent ? 0xa855f7 : 0x00D9D9,
                     transparent: true,
-                    opacity: isAccent ? 0.45 : 0.20
+                    opacity: isAccent ? 0.35 : 0.15
                 });
                 const ring = new THREE.Line(ringGeo, ringMat);
-                ring.position.z = -i * 1.2;
+                ring.position.z = -i * 1.5;
                 scene.add(ring);
                 rings.push(ring);
             }
 
-            // Campo estelar / Partículas de alta densidade em movimento
-            const pCount = 1800;
+            # Partículas de fundo com movimento subtil e lento
+            const pCount = 1200;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
             const pSpeed = new Float32Array(pCount);
 
             for (let i = 0; i < pCount * 3; i += 3) {
                 const angle = Math.random() * Math.PI * 2;
-                const r = 0.5 + Math.random() * 5.5;
+                const r = 0.5 + Math.random() * 5.0;
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
-                pPos[i+2] = -Math.random() * 80;
-                pSpeed[i/3] = 0.015 + Math.random() * 0.025;
+                pPos[i+2] = -Math.random() * 75;
+                pSpeed[i/3] = 0.003 + Math.random() * 0.004; # Velocidade reduzida
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
             const pMat = new THREE.PointsMaterial({
                 color: 0x00D9D9,
-                size: 0.055,
+                size: 0.045,
                 transparent: true,
-                opacity: 0.85,
+                opacity: 0.70,
                 blending: THREE.AdditiveBlending
             });
             const particles = new THREE.Points(pGeo, pMat);
@@ -107,36 +107,33 @@ def injetar_fundo_tunel_imersivo():
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.0012;
+                time += 0.0003; # Incremento temporal muito baixo para garantir suavidade e lentidão
 
-                // Movimento dinâmico dos anéis em espiral
                 for (let i = 0; i < ringCount; i++) {
                     const r = rings[i];
-                    r.position.z += 0.018;
+                    r.position.z += 0.004; # Avanço lento dos anéis
                     if (r.position.z > 5.0) {
-                        r.position.z = -ringCount * 1.2 + 5.0;
+                        r.position.z = -ringCount * 1.5 + 5.0;
                     }
                     const pz = r.position.z;
-                    r.position.x = Math.sin(pz * 0.06 + time) * 1.2;
-                    r.position.y = Math.cos(pz * 0.06 + time) * 1.2;
-                    r.rotation.z = pz * 0.12 + time * 0.05;
+                    r.position.x = Math.sin(pz * 0.04 + time) * 0.8;
+                    r.position.y = Math.cos(pz * 0.04 + time) * 0.8;
+                    r.rotation.z = pz * 0.05 + time * 0.01;
                 }
 
-                // Fluxo contínuo de partículas
                 const pos = particles.geometry.attributes.position.array;
                 for (let i = 0; i < pCount * 3; i += 3) {
                     pos[i+2] += pSpeed[i/3];
                     if (pos[i+2] > 5.0) {
-                        pos[i+2] = -80;
+                        pos[i+2] = -75;
                     }
                 }
                 particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.0003;
+                particles.rotation.z += 0.00005;
 
-                // Movimento imersivo da câmara
-                camera.position.x = Math.sin(time * 0.25) * 0.35;
-                camera.position.y = Math.cos(time * 0.2) * 0.30;
-                camera.rotation.z = Math.sin(time * 0.15) * 0.03;
+                camera.position.x = Math.sin(time * 0.1) * 0.15;
+                camera.position.y = Math.cos(time * 0.08) * 0.12;
+                camera.rotation.z = Math.sin(time * 0.05) * 0.008;
 
                 renderer.render(scene, camera);
             }
@@ -487,10 +484,10 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (COM TÚNEL IMERSIVO) ----------------
+# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (COM TÚNEL LENTO) ----------------
 if ficheiro_saft is None:
-    # Ativa o túnel 3D hiper-imersivo apenas na página inicial
-    injetar_fundo_tunel_imersivo()
+    # Ativa o túnel lento e sóbrio exclusivamente na página inicial
+    injetar_fundo_tunel_lento()
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### Pilares de Inteligência Financeira e Fiscal:")
