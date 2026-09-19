@@ -27,8 +27,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTOR 3D: TÚNEL DINÂMICO (ANIMADO NA HOME, ESTÁTICO APÓS UPLOAD) ----------------
-def injetar_fundo_tunel(animating=True):
+# ---------------- MOTOR 3D: TÚNEL IDÊNTICO E CONTÍNUO EM AMBAS AS TELAS ----------------
+def injetar_fundo_tunel():
     tunel_html = """
     <!DOCTYPE html>
     <html>
@@ -105,58 +105,50 @@ def injetar_fundo_tunel(animating=True):
             const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            const isAnimating = __ANIMATING_FLAG__;
+            let time = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.0003;
 
-            if (isAnimating) {
-                let time = 0;
-                function animate() {
-                    requestAnimationFrame(animate);
-                    time += 0.0003;
-
-                    for (let i = 0; i < ringCount; i++) {
-                        const r = rings[i];
-                        r.position.z += 0.004;
-                        if (r.position.z > 5.0) {
-                            r.position.z = -ringCount * 1.5 + 5.0;
-                        }
-                        const pz = r.position.z;
-                        r.position.x = Math.sin(pz * 0.04 + time) * 0.8;
-                        r.position.y = Math.cos(pz * 0.04 + time) * 0.8;
-                        r.rotation.z = pz * 0.05 + time * 0.01;
+                for (let i = 0; i < ringCount; i++) {
+                    const r = rings[i];
+                    r.position.z += 0.004;
+                    if (r.position.z > 5.0) {
+                        r.position.z = -ringCount * 1.5 + 5.0;
                     }
-
-                    const pos = particles.geometry.attributes.position.array;
-                    for (let i = 0; i < pCount * 3; i += 3) {
-                        pos[i+2] += pSpeed[i/3];
-                        if (pos[i+2] > 5.0) {
-                            pos[i+2] = -75;
-                        }
-                    }
-                    particles.geometry.attributes.position.needsUpdate = true;
-                    particles.rotation.z += 0.00005;
-
-                    camera.position.x = Math.sin(time * 0.1) * 0.15;
-                    camera.position.y = Math.cos(time * 0.08) * 0.12;
-                    camera.rotation.z = Math.sin(time * 0.05) * 0.008;
-
-                    renderer.render(scene, camera);
+                    const pz = r.position.z;
+                    r.position.x = Math.sin(pz * 0.04 + time) * 0.8;
+                    r.position.y = Math.cos(pz * 0.04 + time) * 0.8;
+                    r.rotation.z = pz * 0.05 + time * 0.01;
                 }
-                animate();
-            } else {
+
+                const pos = particles.geometry.attributes.position.array;
+                for (let i = 0; i < pCount * 3; i += 3) {
+                    pos[i+2] += pSpeed[i/3];
+                    if (pos[i+2] > 5.0) {
+                        pos[i+2] = -75;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.rotation.z += 0.00005;
+
+                camera.position.x = Math.sin(time * 0.1) * 0.15;
+                camera.position.y = Math.cos(time * 0.08) * 0.12;
+                camera.rotation.z = Math.sin(time * 0.05) * 0.008;
+
                 renderer.render(scene, camera);
             }
+            animate();
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.render(scene, camera);
             });
         </script>
     </body>
     </html>
-    """.replace("__ANIMATING_FLAG__", "true" if animating else "false")
-    
+    """
     components.html(tunel_html, height=0)
 
 # ---------------- ESTILOS VISUAIS GLOBAIS (LAYOUT FLUIDO / LARGURA TOTAL) ----------------
@@ -594,8 +586,8 @@ ficheiro_upload = st.file_uploader(
     type=["xml", "xlsx", "xls", "csv"]
 )
 
-# Injetar o fundo túnel: em movimento na página inicial, estático após o upload do ficheiro
-injetar_fundo_tunel(animating=(ficheiro_upload is None))
+# Injetar o túnel dinâmico idêntico e em constante movimento em ambas as telas
+injetar_fundo_tunel()
 
 # ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
 if ficheiro_upload is None:
