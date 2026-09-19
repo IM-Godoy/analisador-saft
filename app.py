@@ -13,6 +13,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ---------------- OCULTAR TOTALMENTE A BARRA E ÍCONES SUPERIORES ----------------
+st.markdown("""
+    <style>
+    /* Oculta por completo a barra de ferramentas e ícones do Streamlit no topo */
+    [data-testid="stHeader"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # ---------------- MOTOR 3D: TÚNEL ESPIRAL ULTRA-SUAVE (FUNDO GLOBAL) ----------------
 def injetar_fundo_tunel_suave():
     tunel_html = """
@@ -146,7 +158,7 @@ injetar_fundo_tunel_suave()
 st.markdown("""
     <style>
     /* Transparência Global */
-    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
+    html, body, .stApp, [data-testid="stAppViewContainer"], .main {
         background: transparent !important;
     }
     body {
