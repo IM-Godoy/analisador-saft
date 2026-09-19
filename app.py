@@ -7,14 +7,14 @@ import urllib.request
 import json
 
 st.set_page_config(
-    page_title="Analisador SAF-T | Igor - Junior Data Analyst", 
+    page_title="SAF-T Intelligence Pro | Plataforma Executiva B2B", 
     page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- MOTOR 3D: TÚNEL ESPIRAL INFINITO (FUNDO GLOBAL) ----------------
-def injetar_fundo_tunel_3d():
+# ---------------- MOTOR 3D: TÚNEL ESPIRAL SUAVE E AMBIENTE (FUNDO GLOBAL) ----------------
+def injetar_fundo_tunel_suave():
     tunel_html = """
     <!DOCTYPE html>
     <html>
@@ -22,7 +22,7 @@ def injetar_fundo_tunel_3d():
         <meta charset="utf-8">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #04070a; }
+            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #030609; }
             canvas { width: 100%; height: 100%; display: block; }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -32,17 +32,18 @@ def injetar_fundo_tunel_3d():
         <script>
             const canvas = document.getElementById('bg-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x04070a, 0.038);
+            // Nevoeiro denso para fundir suavemente os anéis no horizonte
+            scene.fog = new THREE.FogExp2(0x030609, 0.04);
 
-            const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 100);
+            const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.z = 5.0;
 
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // 1. ANÉIS POLIGONAIS DA ESPIRAL (TURQUESA)
-            const ringCount = 48;
+            // 1. ANÉIS POLIGONAIS EM VELOCIDADE SUAVE
+            const ringCount = 44;
             const rings = [];
             const sides = 8;
             const radius = 3.6;
@@ -57,9 +58,9 @@ def injetar_fundo_tunel_3d():
             for (let i = 0; i < ringCount; i++) {
                 const isBright = (i % 2 === 0);
                 const ringMat = new THREE.LineBasicMaterial({
-                    color: isBright ? 0x00D9D9 : 0x00A8A8,
+                    color: isBright ? 0x00D9D9 : 0x008b8b,
                     transparent: true,
-                    opacity: isBright ? 0.45 : 0.25
+                    opacity: isBright ? 0.32 : 0.16
                 });
                 const ring = new THREE.Line(ringGeo, ringMat);
                 ring.position.z = -i * 1.5;
@@ -67,72 +68,72 @@ def injetar_fundo_tunel_3d():
                 rings.push(ring);
             }
 
-            // 2. VÓRTICE DE PARTÍCULAS EM PROFUNDIDADE
-            const pCount = 1100;
+            // 2. VÓRTICE DE PARTÍCULAS LENTO E ELEGANTE
+            const pCount = 950;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
             const pSpeed = new Float32Array(pCount);
 
             for (let i = 0; i < pCount * 3; i += 3) {
                 const angle = Math.random() * Math.PI * 2;
-                const r = 1.8 + Math.random() * 5.0;
+                const r = 1.9 + Math.random() * 4.8;
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
-                pPos[i+2] = -Math.random() * 70;
-                pSpeed[i/3] = 0.08 + Math.random() * 0.14;
+                pPos[i+2] = -Math.random() * 65;
+                // Velocidade reduzida para um efeito suave e relaxante
+                pSpeed[i/3] = 0.02 + Math.random() * 0.035;
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
             const pMat = new THREE.PointsMaterial({
                 color: 0x00D9D9,
-                size: 0.048,
+                size: 0.042,
                 transparent: true,
-                opacity: 0.85,
+                opacity: 0.65,
                 blending: THREE.AdditiveBlending
             });
             const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            // 3. ANIMAÇÃO DE MOVIMENTO CONTÍNUO (60+ FPS)
+            // 3. ANIMAÇÃO DE FLUXO CONTÍNUO LENTO (60 FPS)
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.015;
+                time += 0.0035; // Incremento de tempo muito suave
 
-                // Translação e rotação em espiral dos anéis
+                // Movimento do túnel a ritmo calmo
                 for (let i = 0; i < ringCount; i++) {
                     const r = rings[i];
-                    r.position.z += 0.14;
+                    r.position.z += 0.032; // Deslize calmo (antes era 0.14)
                     if (r.position.z > 6.0) {
                         r.position.z = -ringCount * 1.5 + 6.0;
                     }
                     const pz = r.position.z;
-                    r.position.x = Math.sin(pz * 0.12 + time) * 1.3;
-                    r.position.y = Math.cos(pz * 0.12 + time) * 1.3;
-                    r.rotation.z = pz * 0.16 + time * 0.35;
+                    r.position.x = Math.sin(pz * 0.08 + time) * 1.1;
+                    r.position.y = Math.cos(pz * 0.08 + time) * 1.1;
+                    r.rotation.z = pz * 0.1 + time * 0.08;
                 }
 
-                // Voo das partículas ao longo do túnel
+                // Partículas em fluxo suave
                 const pos = particles.geometry.attributes.position.array;
                 for (let i = 0; i < pCount * 3; i += 3) {
                     pos[i+2] += pSpeed[i/3];
                     if (pos[i+2] > 6.0) {
-                        pos[i+2] = -70;
+                        pos[i+2] = -65;
                     }
                 }
                 particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.0018;
+                particles.rotation.z += 0.0004;
 
-                // Ondulação subtil da câmara
-                camera.position.x = Math.sin(time * 0.4) * 0.4;
-                camera.position.y = Math.cos(time * 0.32) * 0.3;
-                camera.rotation.z = Math.sin(time * 0.25) * 0.04;
+                // Movimento suave e sutil da câmara
+                camera.position.x = Math.sin(time * 0.25) * 0.28;
+                camera.position.y = Math.cos(time * 0.2) * 0.22;
+                camera.rotation.z = Math.sin(time * 0.15) * 0.02;
 
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Responsividade
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
@@ -144,21 +145,21 @@ def injetar_fundo_tunel_3d():
     """
     components.html(tunel_html, height=0)
 
-injetar_fundo_tunel_3d()
+injetar_fundo_tunel_suave()
 
 # ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
     <style>
-    /* 1. Transparência Global para o Túnel 3D brilhar no fundo */
+    /* 1. Transparência Global */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
         background: transparent !important;
     }
     body {
-        background-color: #04070a !important;
+        background-color: #030609 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* 2. Posicionamento fixo do componente 3D no plano de fundo */
+    /* 2. Componente 3D no fundo estrito */
     div[data-testid="stCustomComponentV1"],
     iframe {
         position: fixed !important;
@@ -173,40 +174,38 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* 3. Limpeza do espaço reservado do iframe */
     .element-container:has(div[data-testid="stCustomComponentV1"]) {
         position: absolute !important;
         height: 0px !important;
         overflow: hidden !important;
     }
 
-    /* 4. Contentor principal dos dados */
     .block-container {
         position: relative !important;
         z-index: 10 !important;
         max-width: 1200px !important;
-        padding-top: 1.8rem !important;
+        padding-top: 2rem !important;
     }
 
-    /* 5. Cartões em Dark Glassmorphism */
+    /* 3. Cartões Glassmorphism de Alta Legibilidade */
     .glass-card {
-        background: rgba(8, 14, 20, 0.78) !important;
-        border: 1px solid rgba(0, 217, 217, 0.28) !important;
+        background: rgba(7, 13, 19, 0.82) !important;
+        border: 1px solid rgba(0, 217, 217, 0.24) !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
     }
 
     .main-header {
-        background: linear-gradient(135deg, rgba(8, 16, 22, 0.88) 0%, rgba(4, 8, 12, 0.88) 100%) !important;
-        border: 1px solid rgba(0, 217, 217, 0.35) !important;
+        background: linear-gradient(135deg, rgba(8, 15, 21, 0.9) 0%, rgba(4, 7, 11, 0.9) 100%) !important;
+        border: 1px solid rgba(0, 217, 217, 0.32) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
         backdrop-filter: blur(16px);
-        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.65);
+        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.7);
     }
 
     .badge-pill {
@@ -220,9 +219,9 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .badge-turquoise { 
-        background: rgba(0, 217, 217, 0.15); 
+        background: rgba(0, 217, 217, 0.14); 
         color: #00D9D9; 
-        border: 1px solid rgba(0, 217, 217, 0.4); 
+        border: 1px solid rgba(0, 217, 217, 0.38); 
     }
     .badge-purple { 
         background: rgba(168, 85, 247, 0.15); 
@@ -230,14 +229,14 @@ st.markdown("""
         border: 1px solid rgba(168, 85, 247, 0.3); 
     }
 
-    /* Cartões de Métricas com Destaque Turquesa */
+    /* Cartões de Métricas */
     div[data-testid="stMetric"] {
-        background: rgba(8, 14, 20, 0.8) !important;
-        border: 1px solid rgba(0, 217, 217, 0.25) !important;
+        background: rgba(7, 13, 19, 0.84) !important;
+        border: 1px solid rgba(0, 217, 217, 0.22) !important;
         padding: 16px;
         border-radius: 12px;
-        backdrop-filter: blur(12px) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(14px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
     }
     div[data-testid="stMetricLabel"] p {
         color: #94a3b8 !important;
@@ -250,17 +249,17 @@ st.markdown("""
         color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
-        text-shadow: 0 0 15px rgba(0, 217, 217, 0.3);
+        text-shadow: 0 0 12px rgba(0, 217, 217, 0.25);
     }
 
-    /* File Uploader com Efeito Vidro */
+    /* File Uploader Estilizado */
     div[data-testid="stFileUploader"] {
-        background: rgba(8, 14, 20, 0.75) !important;
-        border: 1px dashed rgba(0, 217, 217, 0.45) !important;
+        background: rgba(7, 13, 19, 0.78) !important;
+        border: 1px dashed rgba(0, 217, 217, 0.42) !important;
         border-radius: 14px !important;
         padding: 18px !important;
         backdrop-filter: blur(14px) !important;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5) !important;
     }
 
     /* Separadores / Tabs */
@@ -274,10 +273,10 @@ st.markdown("""
         border-bottom-color: #00D9D9 !important;
     }
 
-    /* Cartões de Planos / Preços */
+    /* Cartões de Preços Corporativos */
     .pricing-card {
-        background: rgba(8, 14, 20, 0.82);
-        border: 1px solid rgba(0, 217, 217, 0.25);
+        background: rgba(7, 13, 19, 0.84);
+        border: 1px solid rgba(0, 217, 217, 0.22);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -287,9 +286,9 @@ st.markdown("""
         backdrop-filter: blur(14px);
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, rgba(13, 26, 36, 0.9) 0%, rgba(6, 10, 14, 0.9) 100%);
+        background: linear-gradient(180deg, rgba(11, 23, 32, 0.92) 0%, rgba(5, 9, 13, 0.92) 100%);
         border: 2px solid #00D9D9;
-        box-shadow: 0 8px 30px rgba(0, 217, 217, 0.28);
+        box-shadow: 0 8px 32px rgba(0, 217, 217, 0.25);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -413,7 +412,7 @@ def processar_saft_completo(xml_bytes):
 
 def exibir_tabela_precos():
     st.markdown("### 💎 Planos de Acompanhamento Mensal")
-    st.markdown("Preços transparentes para empresas individuais e gabinetes de contabilidade:")
+    st.markdown("Disponibilizamos planos para **empresas** e versões personalizadas para **gabinetes de contabilidade**:")
     
     col_p1, col_p2, col_p3 = st.columns(3)
 
@@ -424,11 +423,11 @@ def exibir_tabela_precos():
                 <span class="badge-pill badge-turquoise">Diagnóstico</span>
                 <h3 style="margin: 0; color: #ffffff;">Acesso Gratuito</h3>
                 <div class="pricing-price">0 €</div>
-                <div class="pricing-sub">Para testes individuais pontuais</div>
+                <div class="pricing-sub">Para testes e diagnósticos pontuais</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> Leitura e visualização do SAF-T</li>
                     <li><span class="check-icon">✓</span> KPIs essenciais de faturação</li>
-                    <li><span class="check-icon">✓</span> Curva ABC e Alertas no ecrã</li>
+                    <li><span class="check-icon">✓</span> Curva ABC e Alertas de Risco</li>
                     <li><span class="check-icon">✓</span> Relatório de 1 página</li>
                 </ul>
             </div>
@@ -443,7 +442,7 @@ def exibir_tabela_precos():
                 <span class="badge-pill badge-turquoise">Empresas</span>
                 <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
                 <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
-                <div class="pricing-sub">Acompanhamento executivo mensal</div>
+                <div class="pricing-sub">Acompanhamento executivo contínuo</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
                     <li><span class="check-icon">✓</span> Análise Mensal Automática via E-mail</li>
@@ -480,41 +479,33 @@ def exibir_tabela_precos():
         url_gab = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_gab)}"
         st.link_button("⭐ Aderir ao Gabinete Pro (79€)", url_gab, type="primary", use_container_width=True)
 
-# ---------------- CABEÇALHO PRINCIPAL FLUTUANTE ----------------
+# ---------------- CABEÇALHO CORPORATIVO ----------------
 st.markdown("""
 <div class="main-header">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div>
-            <span class="badge-pill badge-turquoise">⚡ SAF-T Intelligence 3D • Aveiro, Portugal</span>
-            <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">Analisador SAF-T</h1>
-            <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Análise de Ficheiros SAF-T Simplificada</h3>
-            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
-                Importa, processa e analisa dados SAF-T com precisão | <b>Igor - Junior Data Analyst</b>
-            </p>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="https://github.com/IM-Godoy/analisador-saft" target="_blank" style="text-decoration: none; background: rgba(0,217,217,0.12); border: 1px solid rgba(0,217,217,0.35); color: #00D9D9; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">GitHub</a>
-            <a href="https://www.linkedin.com/in/im-godoy/" target="_blank" style="text-decoration: none; background: rgba(0,217,217,0.12); border: 1px solid rgba(0,217,217,0.35); color: #00D9D9; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">LinkedIn</a>
-        </div>
-    </div>
+    <span class="badge-pill badge-turquoise">⚡ PLATAFORMA CORPORATIVA • SAF-T ANALYTICS</span>
+    <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
+    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
+    <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
+        Processamento seguro de ficheiros fiscais, apuramento de volume real sem notas de crédito, matriz 80/20 e conferência de IVA.
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA DE ENTRADA (SEM FICHEIRO) ----------------
+# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
 if ficheiro_saft is None:
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### Pilares de Auditoria e Inteligência:")
+    st.markdown("### Pilares de Inteligência Financeira e Fiscal:")
     col_h1, col_h2, col_h3 = st.columns(3)
 
     with col_h1:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Segurança Máxima</span>
+            <span class="badge-pill badge-turquoise">Segurança Corporativa</span>
             <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Os dados fiscais e faturas são processados exclusivamente na memória volátil da sessão. Nenhum valor de faturação é gravado em bases de dados externas.
+                Os dados fiscais e documentos são analisados estritamente na memória da sessão de navegação. Nenhum valor comercial é gravado em bases de dados externas.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -525,7 +516,7 @@ if ficheiro_saft is None:
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
             <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Identifica instantaneamente os clientes Classe A que sustentam 80% do fluxo de caixa e obtém alertas automáticos de risco de concentração.
+                Identifica os clientes críticos que asseguram 80% do fluxo de caixa e obtém alertas automáticos sobre dependência excessiva de faturação.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -536,7 +527,7 @@ if ficheiro_saft is None:
             <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
             <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Resumo instantâneo de faturas emitidas vs. notas de crédito, com conferência discriminada por taxas normal (23%), intermédia, reduzida e isenções.
+                Resumo instantâneo de faturas emitidas vs. notas de crédito, discriminado por escalões de imposto (Normal 23%, Intermédia, Reduzida e Isenções).
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -594,7 +585,7 @@ else:
             d_col1, d_col2 = st.columns(2)
             with d_col1:
                 if concentracao_top1 > 40:
-                    st.error(f"🚨 **Dependência Crítica de Carteira:** O cliente **{top_cliente_nome}** gera **{concentracao_top1:.1f}%** de toda a receita. A perda deste cliente compromete a estrutura de custos.")
+                    st.error(f"🚨 **Dependência Crítica de Carteira:** O cliente líder gera **{concentracao_top1:.1f}%** de toda a receita. Risco elevado para a sustentabilidade da tesouraria.")
                 elif concentracao_top1 > 25:
                     st.warning(f"⚠️ **Atenção à Concentração:** O principal cliente representa **{concentracao_top1:.1f}%** do volume de negócios.")
                 else:
@@ -602,9 +593,9 @@ else:
 
             with d_col2:
                 if taxa_nc > 5:
-                    st.error(f"🚨 **Taxa de Anulação Alta ({taxa_nc:.1f}%):** O valor devolvido em notas de crédito supera os padrões saudáveis (>5%). Indicador de possíveis falhas na operação ou faturação errática.")
+                    st.error(f"🚨 **Taxa de Anulação Alta ({taxa_nc:.1f}%):** As notas de crédito superam os padrões saudáveis (>5%). Indicador de possíveis falhas na faturação ou devoluções de serviço.")
                 else:
-                    st.success(f"✅ **Operação Eficiente:** Taxa de notas de crédito reduzida ({taxa_nc:.1f}%), dentro dos parâmetros de excelência.")
+                    st.success(f"✅ **Operação Eficiente:** Taxa de notas de crédito reduzida ({taxa_nc:.1f}%), dentro dos parâmetros ótimos.")
 
             st.markdown("---")
             st.markdown("#### Ritmo Diário de Vendas no Período")
@@ -615,8 +606,8 @@ else:
 
         # TAB 2: CURVA ABC
         with tab_abc:
-            st.markdown("#### Classificação de Clientes por Importância Estratégica (Regra 80/20)")
-            st.caption("Segmentação automática dos clientes que sustentam o volume financeiro da empresa.")
+            st.markdown("#### Segmentação Estratégica de Carteira (Regra 80/20)")
+            st.caption("Classificação automática dos clientes que asseguram o volume financeiro da empresa.")
 
             df_abc = df_clientes[df_clientes['ValorBruto'] > 0].copy()
             total_rev_abc = df_abc['ValorBruto'].sum()
@@ -657,7 +648,7 @@ else:
         # TAB 3: AUDITORIA DE IVA
         with tab_iva:
             st.markdown("#### Resumo Fiscal de IVA Liquidado")
-            st.caption("Conferência automática por escalão tributável para gabinetes de contabilidade e TOCs.")
+            st.caption("Conferência automática por escalão tributável para gabinetes de contabilidade e gestores.")
 
             if not df_tax.empty:
                 df_tax_resumo = df_tax.groupby(['TaxCode', 'TaxRate'])[['Base', 'ValorIVA']].sum().reset_index()
@@ -710,7 +701,7 @@ else:
             <body>
                 <div class="card">
                     <h2>Relatório Executivo de Gestão & Faturação</h2>
-                    <p style="color: #64748b; font-size: 13px;">Auditoria Automatizada via SAF-T | Analisador SAF-T</p>
+                    <p style="color: #64748b; font-size: 13px;">Auditoria Automatizada via SAF-T</p>
                     <div class="kpis">
                         <div class="kpi"><h4>Faturação Líquida</h4><p>{fat_liquida:,.2f} €</p></div>
                         <div class="kpi"><h4>Ticket Médio</h4><p>{ticket_medio:,.2f} €</p></div>
@@ -738,18 +729,18 @@ else:
             exibir_tabela_precos()
 
             st.markdown("---")
-            st.subheader("📬 Fale Connosco ou Peça uma Demonstração Personalizada")
+            st.subheader("📬 Fale com a Nossa Equipa Comercial")
             
             col_form, col_whats = st.columns([1.2, 1])
             MEU_EMAIL_NOTIFICACAO = "gestao.saft.pt@gmail.com"
 
             with col_form:
                 with st.form("form_contacto_v2"):
-                    st.markdown("**Pedir contacto ou proposta por e-mail:**")
-                    nome = st.text_input("O seu Nome")
-                    contacto = st.text_input("E-mail ou Telemóvel")
-                    tipo_perfil = st.selectbox("Plano de Interesse:", ["Plano PME Gestão (29 €/mês)", "Plano Gabinete Pro (79 €/mês)", "Demonstração para Gabinete"])
-                    submetido = st.form_submit_button("Pedir Informações")
+                    st.markdown("**Pedir proposta ou agendar demonstração técnica:**")
+                    nome = st.text_input("Nome do Responsável / Empresa")
+                    contacto = st.text_input("E-mail ou Telemóvel Corporativo")
+                    tipo_perfil = st.selectbox("Solução Pretendida:", ["Plano PME Gestão (29 €/mês)", "Plano Gabinete Pro (79 €/mês)", "Demonstração para Gabinete"])
+                    submetido = st.form_submit_button("Submeter Pedido")
 
                     if submetido:
                         if nome and contacto:
@@ -757,8 +748,8 @@ else:
                                 payload = json.dumps({
                                     "nome": nome,
                                     "contacto": contacto,
-                                    "perfil": tipo_perfil,
-                                    "_subject": f"🔥 Novo Lead SAF-T Pro: {nome}",
+                                    "solucao": tipo_perfil,
+                                    "_subject": f"🔥 Novo Lead Comercial SAF-T: {nome}",
                                     "_captcha": "false"
                                 }).encode("utf-8")
 
@@ -776,7 +767,7 @@ else:
                                 with urllib.request.urlopen(req) as resp:
                                     res_json = json.loads(resp.read().decode("utf-8"))
                                     if str(res_json.get("success")).lower() == "true":
-                                        st.success("✅ Pedido registado com sucesso! Entraremos em contacto em até 24 horas.")
+                                        st.success("✅ Pedido registado com sucesso! A nossa equipa entrará em contacto em até 24 horas.")
                                     elif "message" in res_json:
                                         st.info(f"ℹ️ {res_json['message']}")
                                     else:
@@ -784,17 +775,17 @@ else:
                             except Exception as e:
                                 st.error(f"Erro ao submeter: {e}")
                         else:
-                            st.error("Por favor, preencha o seu nome e contacto.")
+                            st.error("Por favor, preencha o nome e contacto.")
 
             with col_whats:
-                st.markdown("**Contacto Imediato por WhatsApp:**")
-                st.write("Fale diretamente connosco para tirar dúvidas ou solicitar integração para a sua carteira:")
+                st.markdown("**Atendimento Imediato por WhatsApp:**")
+                st.write("Fale com o suporte técnico e comercial para esclarecer dúvidas ou solicitar integração para a sua carteira:")
                 
                 numero_whatsapp = "351935009099" 
-                msg_whats_geral = "Olá! Estive a testar a plataforma Analisador SAF-T e gostaria de tirar algumas dúvidas sobre os planos."
+                msg_whats_geral = "Olá! Estive a testar a plataforma SAF-T Intelligence Pro e gostaria de tirar algumas dúvidas com a equipa comercial."
                 url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(msg_whats_geral)}"
                 
-                st.link_button("💬 Abrir Conversa no WhatsApp", url_whatsapp, type="primary", use_container_width=True)
+                st.link_button("💬 Falar com a Equipa Comercial", url_whatsapp, type="primary", use_container_width=True)
 
     except Exception as e:
         st.error(f"Erro ao processar ficheiro SAF-T: {e}")
