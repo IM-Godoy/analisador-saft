@@ -79,7 +79,6 @@ def injetar_fundo_tunel_suave():
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
                 pPos[i+2] = -Math.random() * 65;
-                // Velocidade reduzida para deslize ambiente mínimo
                 pSpeed[i/3] = 0.005 + Math.random() * 0.008;
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
@@ -98,12 +97,11 @@ def injetar_fundo_tunel_suave():
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.0008; // Ritmo reduzido
+                time += 0.0008;
 
-                // Movimento do túnel quase estático e suave
                 for (let i = 0; i < ringCount; i++) {
                     const r = rings[i];
-                    r.position.z += 0.007; // Deslize ultra suave (antes era 0.032)
+                    r.position.z += 0.007;
                     if (r.position.z > 6.0) {
                         r.position.z = -ringCount * 1.5 + 6.0;
                     }
@@ -113,7 +111,6 @@ def injetar_fundo_tunel_suave():
                     r.rotation.z = pz * 0.1 + time * 0.02;
                 }
 
-                // Partículas em flutuação lenta
                 const pos = particles.geometry.attributes.position.array;
                 for (let i = 0; i < pCount * 3; i += 3) {
                     pos[i+2] += pSpeed[i/3];
@@ -124,7 +121,6 @@ def injetar_fundo_tunel_suave():
                 particles.geometry.attributes.position.needsUpdate = true;
                 particles.rotation.z += 0.0001;
 
-                // Oscilação impercetível da câmara
                 camera.position.x = Math.sin(time * 0.2) * 0.18;
                 camera.position.y = Math.cos(time * 0.15) * 0.14;
                 camera.rotation.z = Math.sin(time * 0.1) * 0.015;
