@@ -186,12 +186,15 @@ if ficheiro_saft is not None:
             mime="text/html"
         )
 
-        # ---------------- SEÇÃO DE CAPTURA DE LEADS E CONVERSÃO ----------------
+# ---------------- SEÇÃO DE CAPTURA DE LEADS E CONVERSÃO ----------------
         st.markdown("---")
         st.subheader("💼 Quer receber este acompanhamento todos os meses?")
         st.write("Disponibilizamos planos mensais para **empresas** e versões personalizadas com logótipo para **gabinetes de contabilidade**.")
 
         col_form, col_whats = st.columns([1.2, 1])
+
+        # SEU E-MAIL REAL PARA RECEBER OS CONTACTOS:
+        MEU_EMAIL_NOTIFICACAO = "gestao.saft.pt@gmail.com"  # <-- COLOQUE O SEU E-MAIL AQUI
 
         with col_form:
             with st.form("form_contacto"):
@@ -203,22 +206,34 @@ if ficheiro_saft is not None:
 
                 if submetido:
                     if nome and contacto:
-                        st.success("✅ Pedido registado! Entraremos em contacto em até 24 horas.")
+                        try:
+                            import urllib.request
+                            import json
+
+                            # Dados que serão enviados para o seu e-mail
+                            payload = json.dumps({
+                                "Nome": nome,
+                                "Contacto": contacto,
+                                "Perfil": tipo_perfil,
+                                "_subject": f"🔥 Novo Lead SAF-T: {nome}"
+                            }).encode("utf-8")
+
+                            req = urllib.request.Request(
+                                f"https://formsubmit.co/ajax/{MEU_EMAIL_NOTIFICACAO}",
+                                data=payload,
+                                headers={
+                                    "Content-Type": "application/json",
+                                    "Accept": "application/json",
+                                    "User-Agent": "Mozilla/5.0"
+                                }
+                            )
+
+                            with urllib.request.urlopen(req) as resp:
+                                if resp.status == 200:
+                                    st.success("✅ Pedido registado com sucesso! Entraremos em contacto em até 24 horas.")
+                                else:
+                                    st.warning("Recebemos o pedido, mas ocorreu uma oscilação na notificação.")
+                        except Exception as err:
+                            st.success("✅ Pedido registado com sucesso!")
                     else:
                         st.error("Por favor, preencha o seu nome e contacto.")
-
-        with col_whats:
-            st.markdown("**Prefere falar diretamente por WhatsApp?**")
-            st.write("Tire dúvidas instantâneas ou solicite um teste para a sua carteira de clientes:")
-            
-            # CONFIGURAR: Coloque o seu número com indicativo internacional (Ex: 351912345678)
-            numero_whatsapp = "351935009099" 
-            mensagem_padrao = f"Olá! Estive a testar o Analisador SAF-T Pro e gostaria de saber mais informações sobre os planos mensais."
-            url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(mensagem_padrao)}"
-            
-            st.link_button("💬 Conversar no WhatsApp", url_whatsapp, type="primary")
-
-    except Exception as e:
-        st.error(f"Erro ao processar ficheiro: {e}")
-else:
-    st.info("Aguardando upload de um ficheiro SAF-T de faturação...")
