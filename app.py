@@ -434,7 +434,6 @@ def processar_saft_xml(xml_bytes):
     if df_fat.empty:
         raise ValueError("O ficheiro SAF-T XML não contém faturas elegíveis para análise.")
         
-    # Garantir obrigatoriamente colunas chave para evitar erros de colunas em falta
     for col in ['Documento', 'Tipo', 'Data', 'Cliente', 'ValorBruto', 'ValorLiquido', 'Imposto']:
         if col not in df_fat.columns:
             if col in ['ValorBruto', 'ValorLiquido', 'Imposto']:
@@ -461,10 +460,21 @@ def processar_documento_comercial(file_bytes, filename):
             elif filename_lower.endswith('.xls'):
                 df_raw = pd.read_excel(io.BytesIO(file_bytes), engine='xlrd')
             else:
+                # Leitura robusta para CSVs europeus (com separador ponto e vírgula ou vírgula)
                 try:
-                    df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8', sep=None, engine='python')
+                    df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8-sig', sep=';', engine='python')
+                    if len(df_raw.columns) <= 1:
+                        df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8-sig', sep=',', engine='python')
                 except Exception:
-                    df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='latin1', sep=None, engine='python')
+                    try:
+                        df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='latin1', sep=';', engine='python')
+                        if len(df_raw.columns) <= 1:
+                            df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='latin1', sep=',', engine='python')
+                    except Exception:
+                        df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8-sig', sep=None, engine='python')
+
+            # Limpar espaços nos nomes das colunas
+            df_raw.columns = [str(c).strip() for c in df_raw.columns]
 
             colunas_texto = " ".join([str(c).lower() for c in df_raw.columns])
             if not any(k in colunas_texto for k in ['cliente', 'fatura', 'data', 'valor', 'total', 'net', 'iva', 'preco']):
@@ -490,6 +500,7 @@ def processar_documento_comercial(file_bytes, filename):
 
             df_raw = df_raw.rename(columns=col_map)
 
+            # Assegurar obrigatoriamente colunas em falta no DataFrame bruto
             if 'Cliente' not in df_raw.columns:
                 df_raw['Cliente'] = 'Cliente Geral'
             if 'Documento' not in df_raw.columns:
@@ -542,7 +553,6 @@ def processar_documento_comercial(file_bytes, filename):
 
             df_final = pd.DataFrame(dados_faturas)
             
-            # Garantir obrigatoriamente colunas chave
             for col in ['Documento', 'Tipo', 'Data', 'Cliente', 'ValorBruto', 'ValorLiquido', 'Imposto']:
                 if col not in df_final.columns:
                     if col in ['ValorBruto', 'ValorLiquido', 'Imposto']:
