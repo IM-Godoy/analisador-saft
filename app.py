@@ -2,12 +2,13 @@ import streamlit as st
 import streamlit.components.v1 as components
 import xml.etree.ElementTree as ET
 import pandas as pd
+import io
 import urllib.parse
 import urllib.request
 import json
 
 st.set_page_config(
-    page_title="SAF-T Intelligence Pro | Plataforma Executiva B2B", 
+    page_title="SAF-T Intelligence Pro | Inteligência Comercial e Fiscal", 
     page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -186,7 +187,6 @@ st.markdown("""
         overflow: hidden !important;
     }
 
-    /* Expande o contentor para ocupar a largura total do ecrã com margens confortáveis nas pontas */
     .block-container {
         position: relative !important;
         z-index: 10 !important;
@@ -329,7 +329,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
+# ---------------- MOTORES DE PROCESSAMENTO MULTIFORMATO ----------------
 def corrigir_texto(texto):
     if not texto:
         return ""
@@ -340,7 +340,7 @@ def corrigir_texto(texto):
         pass
     return texto
 
-def processar_saft_completo(xml_bytes):
+def processar_saft_xml(xml_bytes):
     root = ET.fromstring(xml_bytes)
     namespace = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
     prefix = 'ns:' if namespace else ''
@@ -411,9 +411,106 @@ def processar_saft_completo(xml_bytes):
 
     return pd.DataFrame(dados_faturas), pd.DataFrame(dados_iva)
 
+def processar_tabela_excel_csv(file_bytes, filename):
+    try:
+        if filename.endswith('.xlsx'):
+            df_raw = pd.read_excel(io.BytesIO(file_bytes))
+        else:
+            try:
+                df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8', sep=None, engine='python')
+            except Exception:
+                df_raw = pd.read_csv(io.BytesIO(file_bytes), encoding='latin1', sep=None, engine='python')
+    except Exception as e:
+        raise ValueError(f"Não foi possível ler o documento: {e}")
+
+    # Mapeamento inteligente de colunas
+    col_map = {}
+    for col in df_raw.columns:
+        col_lower = str(col).lower().strip()
+        if any(k in col_lower for k in ['cliente', 'nome', 'customer', 'entidade']):
+            col_map[col] = 'Cliente'
+        elif any(k in col_lower for k in ['fatura', 'doc', 'documento', 'invoice', 'numero', 'nº']):
+            col_map[col] = 'Documento'
+        elif any(k in col_lower for k in ['data', 'date', 'emissao', 'dia']):
+            col_map[col] = 'Data'
+        elif any(k in col_lower for k in ['bruto', 'total', 'gross', 'valor total']):
+            col_map[col] = 'ValorBruto'
+        elif any(k in col_lower for k in ['liquido', 'net', 'base', 'valor sem iva']):
+            col_map[col] = 'ValorLiquido'
+        elif any(k in col_lower for k in ['iva', 'imposto', 'tax']):
+            col_map[col] = 'Imposto'
+        elif any(k in col_lower for k in ['tipo', 'type', 'documenttype']):
+            col_map[col] = 'Tipo'
+
+    df_raw = df_raw.rename(columns=col_map)
+
+    if 'Cliente' not in df_raw.columns:
+        df_raw['Cliente'] = 'Cliente Geral'
+    if 'Documento' not in df_raw.columns:
+        df_raw['Documento'] = [f"DOC-{i+1}" for i in range(len(df_raw))]
+    if 'Data' not in df_raw.columns:
+        df_raw['Data'] = '2026-01-01'
+    if 'ValorBruto' not in df_raw.columns:
+        numeric_cols = df_raw.select_dtypes(include='number').columns
+        if len(numeric_cols) > 0:
+            df_raw['ValorBruto'] = df_raw[numeric_cols[0]]
+        else:
+            df_raw['ValorBruto'] = 0.0
+    if 'ValorLiquido' not in df_raw.columns:
+        df_raw['ValorLiquido'] = df_raw['ValorBruto']
+    if 'Imposto' not in df_raw.columns:
+        df_raw['Imposto'] = df_raw['ValorBruto'] * 0.187
+    if 'Tipo' not in df_raw.columns:
+        df_raw['Tipo'] = 'FT'
+
+    for col in ['ValorBruto', 'ValorLiquido', 'Imposto']:
+        if col in df_raw.columns:
+            df_raw[col] = pd.to_numeric(df_raw[col].astype(str).str.replace('€', '').str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0.0)
+
+    dados_faturas = []
+    for _, row in df_raw.iterrows():
+        doc_type = str(row.get('Tipo', 'FT')).upper()
+        if 'NC' in doc_type or ('NOTA' in doc_type and 'CREDITO' in doc_type):
+            doc_type = 'NC'
+        else:
+            doc_type = 'FT'
+
+        vb = float(row['ValorBruto'])
+        vl = float(row['ValorLiquido'])
+        imp = float(row['Imposto'])
+
+        if doc_type == 'NC':
+            vb = -abs(vb)
+            vl = -abs(vl)
+            imp = -abs(imp)
+
+        dados_faturas.append({
+            'Documento': str(row['Documento']),
+            'Tipo': doc_type,
+            'Data': str(row['Data'])[:10],
+            'Cliente': str(row['Cliente']),
+            'ValorBruto': vb,
+            'ValorLiquido': vl,
+            'Imposto': imp
+        })
+
+    df_final = pd.DataFrame(dados_faturas)
+    
+    df_tax_data = []
+    for _, row in df_final.iterrows():
+        df_tax_data.append({
+            'TaxCode': 'NOR',
+            'TaxRate': 23.0,
+            'Base': abs(row['ValorLiquido']),
+            'ValorIVA': abs(row['Imposto'])
+        })
+    df_tax_final = pd.DataFrame(df_tax_data)
+
+    return df_final, df_tax_final
+
 def exibir_tabela_precos():
     st.markdown("### 💎 Planos de Acompanhamento Mensal")
-    st.markdown("Disponibilizamos planos para **empresas** e versões personalizadas para **gabinetes de contabilidade**:")
+    st.markdown("Disponibilizamos planos para **empresas**, **gestores** e **gabinetes de contabilidade**:")
     
     col_p1, col_p2, col_p3 = st.columns(3)
 
@@ -426,10 +523,10 @@ def exibir_tabela_precos():
                 <div class="pricing-price">0 €</div>
                 <div class="pricing-sub">Para testes e diagnósticos pontuais</div>
                 <ul class="feature-list">
-                    <li><span class="check-icon">✓</span> Leitura e visualização do SAF-T</li>
+                    <li><span class="check-icon">✓</span> Leitura SAF-T, Excel e CSV</li>
                     <li><span class="check-icon">✓</span> KPIs essenciais de faturação</li>
                     <li><span class="check-icon">✓</span> Curva ABC e Alertas de Risco</li>
-                    <li><span class="check-icon">✓</span> Relatório de 1 página</li>
+                    <li><span class="check-icon">✓</span> Relatório Executivo</li>
                 </ul>
             </div>
         </div>
@@ -440,10 +537,10 @@ def exibir_tabela_precos():
         st.markdown("""
         <div class="pricing-card">
             <div>
-                <span class="badge-pill badge-turquoise">Empresas</span>
+                <span class="badge-pill badge-turquoise">Empresas & Gestores</span>
                 <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
                 <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
-                <div class="pricing-sub">Acompanhamento executivo contínuo</div>
+                <div class="pricing-sub">Inteligência comercial contínua</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
                     <li><span class="check-icon">✓</span> Análise Mensal Automática via E-mail</li>
@@ -483,33 +580,33 @@ def exibir_tabela_precos():
 # ---------------- CABEÇALHO CORPORATIVO ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-turquoise">⚡ PLATAFORMA CORPORATIVA • SAF-T ANALYTICS</span>
+    <span class="badge-pill badge-turquoise">⚡ PLATAFORMA DE INTELIGÊNCIA COMERCIAL • ANALYTICS</span>
     <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
-    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
+    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Análise de Faturação, Risco de Clientes e Auditoria Fiscal para Empresas</h3>
     <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
-        Processamento seguro de ficheiros fiscais, apuramento de volume real sem notas de crédito, matriz 80/20 e conferência de IVA.
+        Carregue ficheiros SAF-T (XML), folhas Excel (.xlsx) ou listas de vendas (.csv). Descubra os seus clientes mais valiosos e otimize a gestão do seu negócio.
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
+ficheiro_upload = st.file_uploader("📂 Arraste ou selecione o seu documento fiscal ou comercial (.xml, .xlsx, .csv)", type=["xml", "xlsx", "csv"])
 
 # Injetar o fundo túnel: em movimento na página inicial, estático após o upload do ficheiro
-injetar_fundo_tunel(animating=(ficheiro_saft is None))
+injetar_fundo_tunel(animating=(ficheiro_upload is None))
 
 # ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
-if ficheiro_saft is None:
+if ficheiro_upload is None:
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### Pilares de Inteligência Financeira e Fiscal:")
+    st.markdown("### Pilares de Inteligência para o seu Negócio:")
     col_h1, col_h2, col_h3 = st.columns(3)
 
     with col_h1:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Segurança Corporativa</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
+            <span class="badge-pill badge-turquoise">Multiformato</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">📁 XML, Excel e CSV</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Os dados fiscais e documentos são analisados estritamente na memória da sessão de navegação. Nenhum valor comercial é gravado em bases de dados externas.
+                Compatível com SAF-T oficial e com qualquer exportação tabular de softwares de faturação ou folhas de cálculo.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -520,7 +617,7 @@ if ficheiro_saft is None:
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
             <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Identifica os clientes críticos que asseguram 80% do fluxo de caixa e obtém alertas automáticos sobre dependência excessiva de faturação.
+                Identifique exatamente quais clientes geram 80% do seu volume de negócios e proteja a sua tesouraria contra dependências.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -528,10 +625,10 @@ if ficheiro_saft is None:
     with col_h3:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
+            <span class="badge-pill badge-turquoise">Privacidade & RGPD</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Resumo instantâneo de faturas emitidas vs. notas de crédito, discriminado por escalões de imposto (Normal 23%, Intermédia, Reduzida e Isenções).
+                Os dados são processados estritamente na memória da sessão de navegação. Nenhuma informação é gravada externamente.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -539,8 +636,13 @@ if ficheiro_saft is None:
 # ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO ----------------
 else:
     try:
-        bytes_data = ficheiro_saft.read()
-        df, df_tax = processar_saft_completo(bytes_data)
+        bytes_data = ficheiro_upload.read()
+        filename_lower = ficheiro_upload.name.lower()
+
+        if filename_lower.endswith('.xml'):
+            df, df_tax = processar_saft_xml(bytes_data)
+        else:
+            df, df_tax = processar_tabela_excel_csv(bytes_data, filename_lower)
 
         # Cálculos Globais
         faturas_positivas = df[df['Tipo'] != 'NC']
@@ -577,7 +679,7 @@ else:
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Faturação Líquida", f"{fat_liquida:,.2f} €")
             c2.metric("Ticket Médio Real", f"{ticket_medio:,.2f} €")
-            c3.metric("Faturas Emitidas", f"{total_docs}", f"{len(notas_credito)} NCs anuladas", delta_color="inverse")
+            c3.metric("Documentos Emitidos", f"{total_docs}", f"{len(notas_credito)} NCs anuladas", delta_color="inverse")
             c4.metric("Risco Concentração Top 1", f"{concentracao_top1:.1f}%")
 
             c5, c6, c7, c8 = st.columns(4)
@@ -613,7 +715,7 @@ else:
         # TAB 2: CURVA ABC
         with tab_abc:
             st.markdown("#### Segmentação Estratégica de Carteira (Regra 80/20)")
-            st.caption("Classificação automática dos clientes que asseguram o volume financeiro da empresa.")
+            st.caption("Classificação automática dos clientes que asseguram o volume financeiro do seu negócio.")
 
             df_abc = df_clientes_positivo.copy()
             df_abc['% Receita'] = (df_abc['ValorBruto'] / total_bruto_pos) * 100 if total_bruto_pos > 0 else 0
@@ -640,7 +742,7 @@ else:
 
             col_abc_chart, col_abc_table = st.columns([1.2, 1])
             with col_abc_chart:
-                st.subheader("Top Clientes da Carteira")
+                st.subheader("Top Clientes do Negócio")
                 st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#00D9D9")
 
             with col_abc_table:
@@ -653,7 +755,7 @@ else:
         # TAB 3: AUDITORIA DE IVA
         with tab_iva:
             st.markdown("#### Resumo Fiscal de IVA Liquidado")
-            st.caption("Conferência automática por escalão tributável para gabinetes de contabilidade e gestores.")
+            st.caption("Conferência automática por escalão tributável para apoio à gestão e contabilidade.")
 
             if not df_tax.empty:
                 df_tax_resumo = df_tax.groupby(['TaxCode', 'TaxRate'])[['Base', 'ValorIVA']].sum().reset_index()
@@ -670,7 +772,7 @@ else:
                 df_tax_show['IVA Liquidado (€)'] = df_tax_show['IVA Liquidado (€)'].map("{:,.2f} €".format)
                 st.dataframe(df_tax_show, use_container_width=True, hide_index=True)
             else:
-                st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
+                st.info("O documento carregado não possui detalhe granular por linha de imposto. O total apurado foi de: " + f"{total_iva:,.2f} €")
 
         # TAB 4: PLANOS & RELATÓRIO
         with tab_plano:
@@ -843,4 +945,4 @@ else:
                 st.link_button("💬 Falar com a Equipa Comercial", url_whatsapp, type="primary", use_container_width=True)
 
     except Exception as e:
-        st.error(f"Erro ao processar ficheiro SAF-T: {e}")
+        st.error(f"Erro ao processar ficheiro: {e}")
