@@ -212,7 +212,7 @@ if ficheiro_saft is not None:
             st.write("Tire dúvidas instantâneas ou solicite um teste para a sua carteira de clientes:")
             
             # CONFIGURAR: Coloque o seu número com indicativo internacional (Ex: 351912345678)
-            numero_whatsapp = "351912345678" 
+            numero_whatsapp = "351935009099" 
             mensagem_padrao = f"Olá! Estive a testar o Analisador SAF-T Pro e gostaria de saber mais informações sobre os planos mensais."
             url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(mensagem_padrao)}"
             
