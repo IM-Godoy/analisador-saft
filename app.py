@@ -13,26 +13,202 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- ESTILOS VISUAIS TEMA TURQUESA & DARK ----------------
+# ---------------- MOTOR 3D: TÚNEL ESPIRAL INFINITO (FUNDO GLOBAL) ----------------
+def injetar_fundo_tunel_3d():
+    tunel_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #04070a; }
+            canvas { width: 100%; height: 100%; display: block; }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body>
+        <canvas id="bg-canvas"></canvas>
+        <script>
+            const canvas = document.getElementById('bg-canvas');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x04070a, 0.038);
+
+            const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 5.0;
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // 1. ANÉIS POLIGONAIS DA ESPIRAL (TURQUESA)
+            const ringCount = 48;
+            const rings = [];
+            const sides = 8;
+            const radius = 3.6;
+            const ringPts = [];
+
+            for (let s = 0; s <= sides; s++) {
+                const a = (s / sides) * Math.PI * 2;
+                ringPts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0));
+            }
+            const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+
+            for (let i = 0; i < ringCount; i++) {
+                const isBright = (i % 2 === 0);
+                const ringMat = new THREE.LineBasicMaterial({
+                    color: isBright ? 0x00D9D9 : 0x00A8A8,
+                    transparent: true,
+                    opacity: isBright ? 0.45 : 0.25
+                });
+                const ring = new THREE.Line(ringGeo, ringMat);
+                ring.position.z = -i * 1.5;
+                scene.add(ring);
+                rings.push(ring);
+            }
+
+            // 2. VÓRTICE DE PARTÍCULAS EM PROFUNDIDADE
+            const pCount = 1100;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            const pSpeed = new Float32Array(pCount);
+
+            for (let i = 0; i < pCount * 3; i += 3) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = 1.8 + Math.random() * 5.0;
+                pPos[i] = Math.cos(angle) * r;
+                pPos[i+1] = Math.sin(angle) * r;
+                pPos[i+2] = -Math.random() * 70;
+                pSpeed[i/3] = 0.08 + Math.random() * 0.14;
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+
+            const pMat = new THREE.PointsMaterial({
+                color: 0x00D9D9,
+                size: 0.048,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            });
+            const particles = new THREE.Points(pGeo, pMat);
+            scene.add(particles);
+
+            // 3. ANIMAÇÃO DE MOVIMENTO CONTÍNUO (60+ FPS)
+            let time = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.015;
+
+                // Translação e rotação em espiral dos anéis
+                for (let i = 0; i < ringCount; i++) {
+                    const r = rings[i];
+                    r.position.z += 0.14;
+                    if (r.position.z > 6.0) {
+                        r.position.z = -ringCount * 1.5 + 6.0;
+                    }
+                    const pz = r.position.z;
+                    r.position.x = Math.sin(pz * 0.12 + time) * 1.3;
+                    r.position.y = Math.cos(pz * 0.12 + time) * 1.3;
+                    r.rotation.z = pz * 0.16 + time * 0.35;
+                }
+
+                // Voo das partículas ao longo do túnel
+                const pos = particles.geometry.attributes.position.array;
+                for (let i = 0; i < pCount * 3; i += 3) {
+                    pos[i+2] += pSpeed[i/3];
+                    if (pos[i+2] > 6.0) {
+                        pos[i+2] = -70;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.rotation.z += 0.0018;
+
+                // Ondulação subtil da câmara
+                camera.position.x = Math.sin(time * 0.4) * 0.4;
+                camera.position.y = Math.cos(time * 0.32) * 0.3;
+                camera.rotation.z = Math.sin(time * 0.25) * 0.04;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Responsividade
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        </script>
+    </body>
+    </html>
+    """
+    components.html(tunel_html, height=0)
+
+injetar_fundo_tunel_3d()
+
+# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
     <style>
-    /* Fundo Global e Tipografia */
-    .stApp {
-        background-color: #06090c;
-        color: #f1f5f9;
+    /* 1. Transparência Global para o Túnel 3D brilhar no fundo */
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
+        background: transparent !important;
+    }
+    body {
+        background-color: #04070a !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    
-    /* Cabeçalho Executivo */
-    .main-header {
-        background: linear-gradient(135deg, #091319 0%, #06090c 100%);
-        border: 1px solid rgba(0, 217, 217, 0.25);
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+
+    /* 2. Posicionamento fixo do componente 3D no plano de fundo */
+    div[data-testid="stCustomComponentV1"],
+    iframe {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: -9999 !important;
+        border: none !important;
+        pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
-    
+
+    /* 3. Limpeza do espaço reservado do iframe */
+    .element-container:has(div[data-testid="stCustomComponentV1"]) {
+        position: absolute !important;
+        height: 0px !important;
+        overflow: hidden !important;
+    }
+
+    /* 4. Contentor principal dos dados */
+    .block-container {
+        position: relative !important;
+        z-index: 10 !important;
+        max-width: 1200px !important;
+        padding-top: 1.8rem !important;
+    }
+
+    /* 5. Cartões em Dark Glassmorphism */
+    .glass-card {
+        background: rgba(8, 14, 20, 0.78) !important;
+        border: 1px solid rgba(0, 217, 217, 0.28) !important;
+        border-radius: 14px !important;
+        padding: 24px !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55) !important;
+    }
+
+    .main-header {
+        background: linear-gradient(135deg, rgba(8, 16, 22, 0.88) 0%, rgba(4, 8, 12, 0.88) 100%) !important;
+        border: 1px solid rgba(0, 217, 217, 0.35) !important;
+        border-radius: 16px;
+        padding: 26px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.65);
+    }
+
     .badge-pill {
         display: inline-block;
         padding: 5px 14px;
@@ -44,14 +220,9 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .badge-turquoise { 
-        background: rgba(0, 217, 217, 0.12); 
+        background: rgba(0, 217, 217, 0.15); 
         color: #00D9D9; 
-        border: 1px solid rgba(0, 217, 217, 0.35); 
-    }
-    .badge-amber { 
-        background: rgba(245, 158, 11, 0.15); 
-        color: #f59e0b; 
-        border: 1px solid rgba(245, 158, 11, 0.3); 
+        border: 1px solid rgba(0, 217, 217, 0.4); 
     }
     .badge-purple { 
         background: rgba(168, 85, 247, 0.15); 
@@ -61,11 +232,12 @@ st.markdown("""
 
     /* Cartões de Métricas com Destaque Turquesa */
     div[data-testid="stMetric"] {
-        background-color: #0a1117;
-        border: 1px solid rgba(0, 217, 217, 0.2);
+        background: rgba(8, 14, 20, 0.8) !important;
+        border: 1px solid rgba(0, 217, 217, 0.25) !important;
         padding: 16px;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(12px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
     }
     div[data-testid="stMetricLabel"] p {
         color: #94a3b8 !important;
@@ -78,39 +250,53 @@ st.markdown("""
         color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
-        text-shadow: 0 0 15px rgba(0, 217, 217, 0.25);
+        text-shadow: 0 0 15px rgba(0, 217, 217, 0.3);
     }
 
-    .hero-card {
-        background: #0a1117;
-        border: 1px solid rgba(0, 217, 217, 0.2);
-        border-radius: 14px;
-        padding: 24px;
-        height: 100%;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    /* File Uploader com Efeito Vidro */
+    div[data-testid="stFileUploader"] {
+        background: rgba(8, 14, 20, 0.75) !important;
+        border: 1px dashed rgba(0, 217, 217, 0.45) !important;
+        border-radius: 14px !important;
+        padding: 18px !important;
+        backdrop-filter: blur(14px) !important;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* Separadores / Tabs */
+    button[data-baseweb="tab"] {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #00D9D9 !important;
+        border-bottom-color: #00D9D9 !important;
     }
 
     /* Cartões de Planos / Preços */
     .pricing-card {
-        background: #0a1117;
-        border: 1px solid rgba(0, 217, 217, 0.2);
+        background: rgba(8, 14, 20, 0.82);
+        border: 1px solid rgba(0, 217, 217, 0.25);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        backdrop-filter: blur(14px);
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, #0d1a24 0%, #06090c 100%);
+        background: linear-gradient(180deg, rgba(13, 26, 36, 0.9) 0%, rgba(6, 10, 14, 0.9) 100%);
         border: 2px solid #00D9D9;
-        box-shadow: 0 8px 30px rgba(0, 217, 217, 0.25);
+        box-shadow: 0 8px 30px rgba(0, 217, 217, 0.28);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        backdrop-filter: blur(16px);
     }
     .pricing-price {
         font-size: 32px;
@@ -142,523 +328,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
-# ---------------- HERO / LANDING PAGE 3D (AWWWARDS TURQUOISE ENGINE) ----------------
-def render_3d_hero_section():
-    landing_3d_html = """
-    <!DOCTYPE html>
-    <html lang="pt">
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-            :root {
-                --primary: #00D9D9;
-                --primary-dark: #00A8A8;
-                --primary-glow: rgba(0, 217, 217, 0.45);
-                --bg-deep: #06090c;
-                --bg-card: rgba(10, 17, 23, 0.72);
-                --border-glass: rgba(0, 217, 217, 0.25);
-                --text-main: #f1f5f9;
-                --text-muted: #94a3b8;
-                --font-main: 'Poppins', -apple-system, sans-serif;
-            }
-            body {
-                width: 100%;
-                height: 590px;
-                overflow: hidden;
-                background-color: var(--bg-deep);
-                color: var(--text-main);
-                font-family: var(--font-main);
-                position: relative;
-                border-radius: 16px;
-                border: 1px solid var(--border-glass);
-            }
-            #webgl-canvas {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 1;
-                cursor: grab;
-            }
-            #webgl-canvas:active { cursor: grabbing; }
-
-            .ui-layer {
-                position: relative;
-                z-index: 2;
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                padding: 24px 30px;
-                pointer-events: none;
-            }
-            .interactive { pointer-events: auto; }
-
-            header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                width: 100%;
-            }
-            .brand-badge {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: var(--bg-card);
-                border: 1px solid var(--border-glass);
-                padding: 7px 16px;
-                border-radius: 40px;
-                backdrop-filter: blur(12px);
-            }
-            .status-dot {
-                width: 8px;
-                height: 8px;
-                background-color: var(--primary);
-                border-radius: 50%;
-                box-shadow: 0 0 10px var(--primary);
-                animation: pulseGlow 2s infinite ease-in-out;
-            }
-            .brand-text {
-                font-size: 0.78rem;
-                font-weight: 700;
-                letter-spacing: 1.2px;
-                text-transform: uppercase;
-                color: var(--primary);
-            }
-            .location-badge {
-                background: var(--bg-card);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                padding: 7px 16px;
-                border-radius: 40px;
-                font-size: 0.8rem;
-                color: var(--text-muted);
-                backdrop-filter: blur(12px);
-            }
-            .location-badge span { color: var(--primary); }
-
-            .hero-container {
-                max-width: 820px;
-                margin-top: auto;
-                margin-bottom: auto;
-            }
-            .tag-pill {
-                display: inline-flex;
-                align-items: center;
-                background: rgba(0, 217, 217, 0.1);
-                border: 1px solid var(--border-glass);
-                color: var(--primary);
-                padding: 5px 14px;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                letter-spacing: 0.5px;
-                text-transform: uppercase;
-                margin-bottom: 12px;
-                backdrop-filter: blur(8px);
-            }
-            h1.hero-title {
-                font-size: 3.2rem;
-                font-weight: 800;
-                line-height: 1.05;
-                letter-spacing: -1.2px;
-                margin-bottom: 8px;
-                background: linear-gradient(135deg, #ffffff 40%, var(--primary) 95%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                text-shadow: 0 10px 40px rgba(0, 217, 217, 0.15);
-            }
-            h2.hero-subtitle {
-                font-size: 1.35rem;
-                font-weight: 600;
-                color: var(--primary);
-                margin-bottom: 12px;
-            }
-            p.hero-description {
-                font-size: 0.95rem;
-                line-height: 1.55;
-                color: var(--text-muted);
-                max-width: 650px;
-                margin-bottom: 24px;
-            }
-            .author-tag {
-                color: #ffffff;
-                font-weight: 600;
-                border-bottom: 1px dashed var(--primary);
-                padding-bottom: 2px;
-            }
-
-            .cta-group {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 14px;
-                align-items: center;
-            }
-            .btn {
-                position: relative;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                padding: 12px 26px;
-                border-radius: 10px;
-                font-size: 0.88rem;
-                font-weight: 600;
-                text-decoration: none;
-                cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-            .btn-primary {
-                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-                color: #031317;
-                box-shadow: 0 0 20px var(--primary-glow);
-                border: 1px solid var(--primary);
-            }
-            .btn-primary:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 0 30px rgba(0, 217, 217, 0.7);
-                color: #000;
-            }
-            .btn-secondary {
-                background: var(--bg-card);
-                color: var(--text-main);
-                border: 1px solid var(--border-glass);
-                backdrop-filter: blur(14px);
-            }
-            .btn-secondary:hover {
-                transform: translateY(-2px);
-                background: rgba(0, 217, 217, 0.12);
-                border-color: var(--primary);
-                color: #ffffff;
-            }
-
-            footer {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-                width: 100%;
-            }
-            .scene-selector {
-                display: flex;
-                gap: 6px;
-                background: var(--bg-card);
-                border: 1px solid var(--border-glass);
-                padding: 5px 8px;
-                border-radius: 30px;
-                backdrop-filter: blur(16px);
-            }
-            .scene-btn {
-                background: transparent;
-                border: none;
-                color: var(--text-muted);
-                font-size: 0.72rem;
-                font-weight: 700;
-                padding: 6px 14px;
-                border-radius: 20px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            .scene-btn:hover { color: #fff; }
-            .scene-btn.active {
-                background: var(--primary);
-                color: #041014;
-                box-shadow: 0 0 12px var(--primary-glow);
-            }
-            .telemetry-tag {
-                font-size: 0.72rem;
-                color: #64748b;
-                letter-spacing: 0.8px;
-            }
-
-            @keyframes pulseGlow {
-                0%, 100% { opacity: 1; transform: scale(1); }
-                50% { opacity: 0.4; transform: scale(0.85); }
-            }
-            @media (max-width: 768px) {
-                h1.hero-title { font-size: 2.2rem; }
-                .location-badge, .telemetry-tag { display: none; }
-                .scene-selector { width: 100%; justify-content: center; }
-            }
-        </style>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    </head>
-    <body>
-        <canvas id="webgl-canvas"></canvas>
-
-        <div class="ui-layer">
-            <header>
-                <div class="brand-badge interactive">
-                    <div class="status-dot"></div>
-                    <div class="brand-text">SAF-T Intelligence 3D</div>
-                </div>
-                <div class="location-badge interactive">
-                    <span>📍</span> Aveiro, Portugal
-                </div>
-            </header>
-
-            <main class="hero-container">
-                <div class="tag-pill interactive">
-                    ⚡ Nova Dimensão em Auditoria Fiscal
-                </div>
-                <h1 class="hero-title">Analisador SAF-T</h1>
-                <h2 class="hero-subtitle">Análise de Ficheiros SAF-T Simplificada</h2>
-                <p class="hero-description">
-                    Importa, processa e analisa dados SAF-T com precisão | 
-                    <span class="author-tag">Igor - Junior Data Analyst</span>. 
-                    Visualização de faturação em tempo real, curva de concentração 80/20 e mapa fiscal de IVA.
-                </p>
-
-                <div class="cta-group">
-                    <a href="https://im-godoy-analisador-saft-app-xwvmax.streamlit.app/" target="_top" class="btn btn-primary interactive" id="cta-analyze">
-                        <span>Iniciar Análise</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                    </a>
-
-                    <a href="https://github.com/IM-Godoy/analisador-saft" target="_blank" class="btn btn-secondary interactive">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                        <span>Ver Código</span>
-                    </a>
-
-                    <a href="https://www.linkedin.com/in/im-godoy/" target="_blank" class="btn btn-secondary interactive" title="LinkedIn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                        <span>LinkedIn</span>
-                    </a>
-                </div>
-            </main>
-
-            <footer>
-                <div class="telemetry-tag">TURQUOISE WEBGL ENGINE // 60 FPS</div>
-                <div class="scene-selector interactive">
-                    <button class="scene-btn active" id="btn-scene-0" onclick="setScene(0)">01 // TÚNEL ESPIRAL</button>
-                    <button class="scene-btn" id="btn-scene-1" onclick="setScene(1)">02 // VÓRTICE WARP</button>
-                    <button class="scene-btn" id="btn-scene-2" onclick="setScene(2)">03 // MATRIZ DATA-CORE</button>
-                </div>
-            </footer>
-        </div>
-
-        <script>
-            const canvas = document.getElementById('webgl-canvas');
-            const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x06090c, 0.045);
-
-            const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 0, 6.8);
-
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            // Partículas Turquesa em Vórtice
-            const pCount = 1200;
-            const pGeo = new THREE.BufferGeometry();
-            const pPos = new Float32Array(pCount * 3);
-            const pSpeeds = new Float32Array(pCount);
-
-            for (let i = 0; i < pCount * 3; i += 3) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 2.0 + Math.random() * 6.0;
-                pPos[i] = Math.cos(angle) * radius;
-                pPos[i + 1] = Math.sin(angle) * radius;
-                pPos[i + 2] = (Math.random() - 0.5) * 45;
-                pSpeeds[i / 3] = 0.04 + Math.random() * 0.08;
-            }
-            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-
-            const pMat = new THREE.PointsMaterial({
-                color: 0x00D9D9,
-                size: 0.045,
-                transparent: true,
-                opacity: 0.75,
-                blending: THREE.AdditiveBlending
-            });
-            const particles = new THREE.Points(pGeo, pMat);
-            scene.add(particles);
-
-            // Anéis da Espiral / Túnel
-            const ringsGroup = new THREE.Group();
-            const ringGeo = new THREE.RingGeometry(3.1, 3.16, 8);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: 0x00A8A8,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.35,
-                side: THREE.DoubleSide
-            });
-
-            for (let i = 0; i < 26; i++) {
-                const ring = new THREE.Mesh(ringGeo, ringMat.clone());
-                const zPos = -i * 1.5 + 4;
-                const sAngle = i * 0.28;
-                ring.position.set(Math.cos(sAngle) * 0.7, Math.sin(sAngle) * 0.7, zPos);
-                ring.rotation.z = sAngle;
-                ringsGroup.add(ring);
-            }
-            scene.add(ringsGroup);
-
-            // Texturas Dinâmicas para os Cartões 3D
-            function createCardTexture(title, val, sub) {
-                const cv = document.createElement('canvas');
-                cv.width = 512;
-                cv.height = 280;
-                const ctx = cv.getContext('2d');
-
-                ctx.fillStyle = '#081017';
-                ctx.fillRect(0, 0, 512, 280);
-
-                ctx.strokeStyle = '#00D9D9';
-                ctx.lineWidth = 6;
-                ctx.strokeRect(3, 3, 506, 274);
-
-                ctx.fillStyle = 'rgba(0, 217, 217, 0.15)';
-                ctx.fillRect(28, 24, 180, 32);
-                ctx.fillStyle = '#00D9D9';
-                ctx.font = 'bold 13px Poppins, sans-serif';
-                ctx.fillText("SAF-T AUDIT CORE", 38, 46);
-
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '16px Poppins, sans-serif';
-                ctx.fillText(title, 28, 96);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 44px Poppins, sans-serif';
-                ctx.fillText(val, 28, 155);
-
-                ctx.fillStyle = '#00D9D9';
-                ctx.font = '14px Poppins, sans-serif';
-                ctx.fillText(sub, 28, 195);
-
-                ctx.strokeStyle = '#00D9D9';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(28, 235);
-                ctx.bezierCurveTo(150, 260, 280, 200, 484, 215);
-                ctx.stroke();
-
-                return new THREE.CanvasTexture(cv);
-            }
-
-            const cardsData = [
-                { t: "Faturação Líquida", v: "650.420 €", s: "Processamento XML instantâneo" },
-                { t: "Curva ABC (Pareto)", v: "80% Receita", s: "Top 3 Clientes Críticos" },
-                { t: "Auditoria Fiscal IVA", v: "23% • 13% • 6%", s: "Conferência automática por taxa" },
-                { t: "Segurança de Dados", v: "100% In-Memory", s: "Sem gravação externa (RGPD)" }
-            ];
-
-            const cardsMeshes = [];
-            const cardGeo = new THREE.PlaneGeometry(2.5, 1.4);
-
-            cardsData.forEach((d, idx) => {
-                const mat = new THREE.MeshBasicMaterial({
-                    map: createCardTexture(d.t, d.v, d.s),
-                    transparent: true,
-                    opacity: 0.92,
-                    side: THREE.DoubleSide
-                });
-                const mesh = new THREE.Mesh(cardGeo, mat);
-                const prog = (idx / cardsData.length) * Math.PI * 2;
-                mesh.position.set(Math.cos(prog) * 2.8, Math.sin(prog) * 1.5, -idx * 3.5 + 2);
-                mesh.rotation.y = -Math.cos(prog) * 0.3;
-                scene.add(mesh);
-                cardsMeshes.push(mesh);
-            });
-
-            // 3 Cenas Awwwards
-            const scenes = [
-                { cam: { x: 0, y: 0, z: 6.8 }, rot: { x: 0, y: 0, z: 0 } },
-                { cam: { x: 0, y: 0.4, z: 2.2 }, rot: { x: -0.15, y: 0.25, z: 0.1 } },
-                { cam: { x: -1.8, y: 2.5, z: 4.8 }, rot: { x: -0.45, y: -0.3, z: -0.15 } }
-            ];
-
-            let activeScene = 0;
-            function setScene(idx) {
-                activeScene = idx;
-                const target = scenes[idx];
-
-                for (let i = 0; i < 3; i++) {
-                    const btn = document.getElementById('btn-scene-' + i);
-                    if (btn) {
-                        if (i === idx) btn.classList.add('active');
-                        else btn.classList.remove('active');
-                    }
-                }
-
-                gsap.to(camera.position, {
-                    x: target.cam.x, y: target.cam.y, z: target.cam.z,
-                    duration: 1.8, ease: "power3.inOut"
-                });
-                gsap.to(camera.rotation, {
-                    x: target.rot.x, y: target.rot.y, z: target.rot.z,
-                    duration: 1.8, ease: "power3.inOut"
-                });
-
-                cardsMeshes.forEach((mesh, i) => {
-                    gsap.to(mesh.rotation, {
-                        z: mesh.rotation.z + Math.PI * 0.5,
-                        duration: 1.4, delay: i * 0.05, ease: "power2.inOut"
-                    });
-                });
-            }
-
-            let autoTimer = setInterval(() => {
-                setScene((activeScene + 1) % 3);
-            }, 8000);
-
-            window.setScene = function(idx) {
-                clearInterval(autoTimer);
-                setScene(idx);
-                autoTimer = setInterval(() => {
-                    setScene((activeScene + 1) % 3);
-                }, 10000);
-            };
-
-            // Parallax Rato
-            let mouseX = 0, mouseY = 0, tX = 0, tY = 0;
-            window.addEventListener('mousemove', (e) => {
-                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-                mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
-            });
-
-            // Loop 60 FPS
-            function animate() {
-                requestAnimationFrame(animate);
-                const pos = particles.geometry.attributes.position.array;
-                for (let i = 0; i < pCount * 3; i += 3) {
-                    pos[i + 2] += pSpeeds[i / 3];
-                    if (pos[i + 2] > 7.5) pos[i + 2] = -35;
-                }
-                particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.001;
-
-                ringsGroup.children.forEach((r, idx) => {
-                    r.rotation.z += 0.003 * (idx % 2 === 0 ? 1 : -1);
-                });
-
-                tX += (mouseX * 0.5 - tX) * 0.05;
-                tY += (mouseY * 0.35 - tY) * 0.05;
-
-                const base = scenes[activeScene].cam;
-                camera.position.x = base.x + tX;
-                camera.position.y = base.y + tY;
-
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        </script>
-    </body>
-    </html>
-    """
-    components.html(landing_3d_html, height=605)
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
@@ -811,57 +480,63 @@ def exibir_tabela_precos():
         url_gab = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_gab)}"
         st.link_button("⭐ Aderir ao Gabinete Pro (79€)", url_gab, type="primary", use_container_width=True)
 
-# ---------------- CABEÇALHO SUPERIOR DA APLICAÇÃO ----------------
+# ---------------- CABEÇALHO PRINCIPAL FLUTUANTE ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-turquoise">SAF-T Intelligence 3D • Aveiro, PT</span>
-    <h1 style="margin: 0; font-size: 28px; color: #ffffff;">⚡ Analisador SAF-T | Diagnóstico Executivo</h1>
-    <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 14px;">
-        Importa, processa e analisa dados SAF-T com precisão | Por Igor - Junior Data Analyst
-    </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <span class="badge-pill badge-turquoise">⚡ SAF-T Intelligence 3D • Aveiro, Portugal</span>
+            <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">Analisador SAF-T</h1>
+            <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Análise de Ficheiros SAF-T Simplificada</h3>
+            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
+                Importa, processa e analisa dados SAF-T com precisão | <b>Igor - Junior Data Analyst</b>
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="https://github.com/IM-Godoy/analisador-saft" target="_blank" style="text-decoration: none; background: rgba(0,217,217,0.12); border: 1px solid rgba(0,217,217,0.35); color: #00D9D9; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">GitHub</a>
+            <a href="https://www.linkedin.com/in/im-godoy/" target="_blank" style="text-decoration: none; background: rgba(0,217,217,0.12); border: 1px solid rgba(0,217,217,0.35); color: #00D9D9; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">LinkedIn</a>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL COM O MOTOR 3D THE STATE OF THE GALLERY ----------------
+# ---------------- CASO 1: PÁGINA DE ENTRADA (SEM FICHEIRO) ----------------
 if ficheiro_saft is None:
-    # AWWWARDS 3D SCENE TRANSITION TURQUOISE ENGINE
-    render_3d_hero_section()
-
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### Pilares de Auditoria e Inteligência:")
     col_h1, col_h2, col_h3 = st.columns(3)
 
     with col_h1:
         st.markdown("""
-        <div class="hero-card">
+        <div class="glass-card">
             <span class="badge-pill badge-turquoise">Segurança Máxima</span>
             <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Os dados fiscais e listas de faturas são processados exclusivamente na memória volátil da sessão. Nenhum valor de faturação é gravado em bases de dados externas.
+                Os dados fiscais e faturas são processados exclusivamente na memória volátil da sessão. Nenhum valor de faturação é gravado em bases de dados externas.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     with col_h2:
         st.markdown("""
-        <div class="hero-card">
+        <div class="glass-card">
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
             <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Descobre instantaneamente os clientes Classe A que garantem 80% do fluxo de caixa e obtém alertas preventivos de risco de tesouraria.
+                Identifica instantaneamente os clientes Classe A que sustentam 80% do fluxo de caixa e obtém alertas automáticos de risco de concentração.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     with col_h3:
         st.markdown("""
-        <div class="hero-card">
-            <span class="badge-pill badge-amber">Conferência Fiscal</span>
+        <div class="glass-card">
+            <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
             <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Resumo instantâneo de faturas emitidas vs. notas de crédito, com conferência por taxas normal (23%), intermédia, reduzida e isenções.
+                Resumo instantâneo de faturas emitidas vs. notas de crédito, com conferência discriminada por taxas normal (23%), intermédia, reduzida e isenções.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -872,7 +547,7 @@ else:
         bytes_data = ficheiro_saft.read()
         df, df_tax = processar_saft_completo(bytes_data)
 
-        # Métricas Globais
+        # Cálculos Globais
         faturas_positivas = df[df['Tipo'] != 'NC']
         notas_credito = df[df['Tipo'] == 'NC']
 
