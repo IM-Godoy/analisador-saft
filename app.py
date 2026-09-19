@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- INJEÇÃO DE VÍDEO DE FUNDO 100% FULLSCREEN (SEM CONTROLOS) ----------------
+# ---------------- INJEÇÃO DE VÍDEO DE FUNDO (BRILHO E COR ORIGINAIS 100%) ----------------
 def carregar_fundo_video():
     video_b64 = ""
     caminhos = ["background.mp4", os.path.join(os.path.dirname(__file__), "background.mp4")]
@@ -47,7 +47,7 @@ def carregar_fundo_video():
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }}
 
-    /* 2. Fixa o vídeo em tela cheia (100vw / 100vh) no fundo absoluto */
+    /* 2. Fixa o vídeo em tela cheia na sua intensidade e brilho 100% originais */
     #bg-video {{
         position: fixed !important;
         top: 0 !important;
@@ -58,37 +58,39 @@ def carregar_fundo_video():
         min-height: 100% !important;
         object-fit: cover !important;
         z-index: -999999 !important;
-        filter: brightness(0.55) contrast(1.18) !important;
+        filter: none !important;
+        opacity: 1 !important;
         pointer-events: none !important;
     }}
 
-    /* 3. Camada dos cartões e tabelas sempre por cima */
+    /* 3. Camada de conteúdo principal */
     .block-container {{
         position: relative !important;
         z-index: 10 !important;
         max-width: 1200px !important;
-        padding-top: 2rem !important;
+        padding-top: 1.8rem !important;
     }}
 
-    /* 4. Cartões Glassmorphism */
+    /* 4. Cartões Glassmorphism Translúcidos (revelam o vídeo no fundo) */
     .glass-card {{
-        background: rgba(4, 8, 10, 0.85) !important;
-        border: 1px solid rgba(0, 217, 217, 0.28) !important;
+        background: rgba(2, 6, 8, 0.45) !important;
+        border: 1px solid rgba(0, 217, 217, 0.35) !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
     }}
 
     .main-header {{
-        background: linear-gradient(135deg, rgba(5, 10, 13, 0.92) 0%, rgba(2, 4, 6, 0.92) 100%) !important;
-        border: 1px solid rgba(0, 217, 217, 0.35) !important;
+        background: linear-gradient(135deg, rgba(2, 6, 8, 0.55) 0%, rgba(1, 3, 4, 0.45) 100%) !important;
+        border: 1px solid rgba(0, 217, 217, 0.4) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
-        backdrop-filter: blur(18px);
-        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.6);
     }}
 
     .badge-pill {{
@@ -102,26 +104,27 @@ def carregar_fundo_video():
         margin-bottom: 8px;
     }}
     .badge-turquoise {{ 
-        background: rgba(0, 217, 217, 0.16); 
+        background: rgba(0, 217, 217, 0.2); 
         color: #00D9D9; 
-        border: 1px solid rgba(0, 217, 217, 0.4); 
+        border: 1px solid rgba(0, 217, 217, 0.5); 
     }}
     .badge-purple {{ 
-        background: rgba(168, 85, 247, 0.15); 
+        background: rgba(168, 85, 247, 0.2); 
         color: #c084fc; 
-        border: 1px solid rgba(168, 85, 247, 0.3); 
+        border: 1px solid rgba(168, 85, 247, 0.4); 
     }}
 
     div[data-testid="stMetric"] {{
-        background: rgba(4, 8, 10, 0.86) !important;
-        border: 1px solid rgba(0, 217, 217, 0.24) !important;
+        background: rgba(2, 6, 8, 0.5) !important;
+        border: 1px solid rgba(0, 217, 217, 0.3) !important;
         padding: 16px;
         border-radius: 12px;
-        backdrop-filter: blur(14px) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
     }}
     div[data-testid="stMetricLabel"] p {{
-        color: #94a3b8 !important;
+        color: #cbd5e1 !important;
         font-size: 12px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
@@ -131,21 +134,22 @@ def carregar_fundo_video():
         color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
-        text-shadow: 0 0 12px rgba(0, 217, 217, 0.25);
+        text-shadow: 0 0 15px rgba(0, 217, 217, 0.4);
     }}
 
     div[data-testid="stFileUploader"] {{
-        background: rgba(4, 8, 10, 0.82) !important;
-        border: 1px dashed rgba(0, 217, 217, 0.45) !important;
+        background: rgba(2, 6, 8, 0.5) !important;
+        border: 1px dashed rgba(0, 217, 217, 0.5) !important;
         border-radius: 14px !important;
         padding: 18px !important;
-        backdrop-filter: blur(14px) !important;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.55) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45) !important;
     }}
 
     button[data-baseweb="tab"] {{
         background: transparent !important;
-        color: #94a3b8 !important;
+        color: #cbd5e1 !important;
         font-weight: 600 !important;
     }}
     button[data-baseweb="tab"][aria-selected="true"] {{
@@ -154,8 +158,20 @@ def carregar_fundo_video():
     }}
 
     .pricing-card {{
-        background: rgba(4, 8, 10, 0.86);
-        border: 1px solid rgba(0, 217, 217, 0.24);
+        background: rgba(2, 6, 8, 0.55);
+        border: 1px solid rgba(0, 217, 217, 0.3);
+        border-radius: 14px;
+        padding: 26px 22px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        backdrop-filter: blur(12px);
+    }}
+    .pricing-card-featured {{
+        background: linear-gradient(180deg, rgba(0, 217, 217, 0.15) 0%, rgba(2, 6, 8, 0.6) 100%);
+        border: 2px solid #00D9D9;
+        box-shadow: 0 8px 32px rgba(0, 217, 217, 0.35);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -163,18 +179,6 @@ def carregar_fundo_video():
         flex-direction: column;
         justify-content: space-between;
         backdrop-filter: blur(14px);
-    }}
-    .pricing-card-featured {{
-        background: linear-gradient(180deg, rgba(8, 16, 20, 0.94) 0%, rgba(3, 6, 8, 0.94) 100%);
-        border: 2px solid #00D9D9;
-        box-shadow: 0 8px 32px rgba(0, 217, 217, 0.25);
-        border-radius: 14px;
-        padding: 26px 22px;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        backdrop-filter: blur(16px);
     }}
     .pricing-price {{
         font-size: 32px;
@@ -184,7 +188,7 @@ def carregar_fundo_video():
     }}
     .pricing-sub {{
         font-size: 13px;
-        color: #94a3b8;
+        color: #cbd5e1;
         margin-bottom: 20px;
     }}
     .feature-list {{
@@ -192,7 +196,7 @@ def carregar_fundo_video():
         padding: 0;
         margin: 0 0 24px 0;
         font-size: 14px;
-        color: #cbd5e1;
+        color: #f1f5f9;
     }}
     .feature-list li {{
         margin-bottom: 10px;
@@ -328,7 +332,7 @@ def exibir_tabela_precos():
             <div>
                 <span class="badge-pill badge-turquoise">Empresas</span>
                 <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
-                <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
+                <div class="pricing-price">29 € <span style="font-size: 15px; color: #cbd5e1; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Acompanhamento executivo contínuo</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
@@ -372,7 +376,7 @@ st.markdown("""
     <span class="badge-pill badge-turquoise">⚡ PLATAFORMA CORPORATIVA • SAF-T ANALYTICS</span>
     <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
     <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
-    <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
+    <p style="margin: 8px 0 0 0; color: #e2e8f0; font-size: 0.95rem;">
         Processamento seguro de ficheiros fiscais, apuramento de volume real sem notas de crédito, matriz 80/20 e conferência de IVA.
     </p>
 </div>
@@ -391,7 +395,7 @@ if ficheiro_saft is None:
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Segurança Corporativa</span>
             <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
                 Os dados fiscais e documentos são analisados estritamente na memória da sessão de navegação. Nenhum valor comercial é gravado em bases de dados externas.
             </p>
         </div>
@@ -402,7 +406,7 @@ if ficheiro_saft is None:
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
             <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
                 Identifica os clientes críticos que asseguram 80% do fluxo de caixa e obtém alertas automáticos sobre dependência excessiva de faturação.
             </p>
         </div>
@@ -413,7 +417,7 @@ if ficheiro_saft is None:
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
             <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
                 Resumo instantâneo de faturas emitidas vs. notas de crédito, discriminado por escalões de imposto (Normal 23%, Intermédia, Reduzida e Isenções).
             </p>
         </div>
