@@ -4,6 +4,7 @@ import pandas as pd
 import urllib.parse
 import urllib.request
 import json
+import base64
 import os
 
 st.set_page_config(
@@ -13,82 +14,64 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- VÍDEO DE FUNDO NATIVO STREAMLIT (LOCAL + CDN FALLBACK) ----------------
-ficheiro_local = "background.mp4"
-if not os.path.exists(ficheiro_local):
-    ficheiro_local = os.path.join(os.path.dirname(__file__), "background.mp4")
+# ---------------- INJEÇÃO DE VÍDEO DE FUNDO 100% FULLSCREEN (SEM CONTROLOS) ----------------
+def carregar_fundo_video():
+    video_b64 = ""
+    caminhos = ["background.mp4", os.path.join(os.path.dirname(__file__), "background.mp4")]
+    for p in caminhos:
+        if os.path.exists(p):
+            try:
+                with open(p, "rb") as f:
+                    video_b64 = base64.b64encode(f.read()).decode("utf-8")
+                if video_b64:
+                    break
+            except Exception:
+                pass
 
-# Se o ficheiro local existir usa-o diretamente; caso contrário usa a CDN rápida do jsDelivr
-fonte_video = ficheiro_local if os.path.exists(ficheiro_local) else "https://cdn.jsdelivr.net/gh/IM-Godoy/analisador-saft@main/background.mp4"
+    fonte_b64 = f'<source src="data:video/mp4;base64,{video_b64}" type="video/mp4">' if video_b64 else ''
+    fonte_cdn = '<source src="https://cdn.jsdelivr.net/gh/IM-Godoy/analisador-saft@main/background.mp4" type="video/mp4">'
 
-try:
-    st.video(fonte_video, autoplay=True, loop=True, muted=True)
-except TypeError:
-    st.video(fonte_video)
-
-# ---------------- ESTILOS VISUAIS: FULLSCREEN BACKGROUND & GLASSMORPHISM ----------------
-st.markdown("""
+    video_html = f"""
     <style>
     /* 1. Transparência total em todos os contentores nativos do Streamlit */
     html, body, .stApp, 
     [data-testid="stAppViewContainer"], 
     [data-testid="stAppViewBlockContainer"],
     [data-testid="stHeader"], 
-    .main, section.main {
+    .main, section.main {{
         background: transparent !important;
         background-color: transparent !important;
-    }
-    body {
+    }}
+    body {{
+        background-color: #010304 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+    }}
 
     /* 2. Fixa o vídeo em tela cheia (100vw / 100vh) no fundo absoluto */
-    div:has(> div[data-testid="stVideo"]),
-    .element-container:has(div[data-testid="stVideo"]),
-    div[data-testid="stVideo"] {
+    #bg-video {{
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        z-index: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        pointer-events: none !important;
-        overflow: hidden !important;
-    }
-
-    div[data-testid="stVideo"] video {
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
         min-width: 100% !important;
         min-height: 100% !important;
-        width: auto !important;
-        height: auto !important;
-        transform: translate(-50%, -50%) !important;
         object-fit: cover !important;
-        /* Filtro cinematográfico para manter legibilidade das tabelas */
-        filter: brightness(0.60) contrast(1.15) !important;
+        z-index: -999999 !important;
+        filter: brightness(0.55) contrast(1.18) !important;
         pointer-events: none !important;
-    }
+    }}
 
-    /* Esconder controlos nativos do vídeo */
-    div[data-testid="stVideo"] video::-webkit-media-controls,
-    div[data-testid="stVideo"] video::-webkit-media-controls-enclosure {
-        display: none !important;
-    }
-
-    /* 3. Camada do conteúdo sempre por cima do vídeo */
-    .block-container {
+    /* 3. Camada dos cartões e tabelas sempre por cima */
+    .block-container {{
         position: relative !important;
         z-index: 10 !important;
         max-width: 1200px !important;
         padding-top: 2rem !important;
-    }
+    }}
 
-    /* 4. Cartões Glassmorphism de Alto Contraste */
-    .glass-card {
+    /* 4. Cartões Glassmorphism */
+    .glass-card {{
         background: rgba(4, 8, 10, 0.85) !important;
         border: 1px solid rgba(0, 217, 217, 0.28) !important;
         border-radius: 14px !important;
@@ -96,9 +79,9 @@ st.markdown("""
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
-    }
+    }}
 
-    .main-header {
+    .main-header {{
         background: linear-gradient(135deg, rgba(5, 10, 13, 0.92) 0%, rgba(2, 4, 6, 0.92) 100%) !important;
         border: 1px solid rgba(0, 217, 217, 0.35) !important;
         border-radius: 16px;
@@ -106,9 +89,9 @@ st.markdown("""
         margin-bottom: 24px;
         backdrop-filter: blur(18px);
         box-shadow: 0 8px 35px rgba(0, 0, 0, 0.8);
-    }
+    }}
 
-    .badge-pill {
+    .badge-pill {{
         display: inline-block;
         padding: 5px 14px;
         font-size: 11px;
@@ -117,64 +100,60 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 8px;
-    }
-    .badge-turquoise { 
+    }}
+    .badge-turquoise {{ 
         background: rgba(0, 217, 217, 0.16); 
         color: #00D9D9; 
         border: 1px solid rgba(0, 217, 217, 0.4); 
-    }
-    .badge-purple { 
+    }}
+    .badge-purple {{ 
         background: rgba(168, 85, 247, 0.15); 
         color: #c084fc; 
         border: 1px solid rgba(168, 85, 247, 0.3); 
-    }
+    }}
 
-    /* 5. Cartões de Métricas */
-    div[data-testid="stMetric"] {
+    div[data-testid="stMetric"] {{
         background: rgba(4, 8, 10, 0.86) !important;
         border: 1px solid rgba(0, 217, 217, 0.24) !important;
         padding: 16px;
         border-radius: 12px;
         backdrop-filter: blur(14px) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-    }
-    div[data-testid="stMetricLabel"] p {
+    }}
+    div[data-testid="stMetricLabel"] p {{
         color: #94a3b8 !important;
         font-size: 12px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-    }
-    div[data-testid="stMetricValue"] div {
+    }}
+    div[data-testid="stMetricValue"] div {{
         color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
         text-shadow: 0 0 12px rgba(0, 217, 217, 0.25);
-    }
+    }}
 
-    /* 6. Caixa de Carregamento de Ficheiros */
-    div[data-testid="stFileUploader"] {
+    div[data-testid="stFileUploader"] {{
         background: rgba(4, 8, 10, 0.82) !important;
         border: 1px dashed rgba(0, 217, 217, 0.45) !important;
         border-radius: 14px !important;
         padding: 18px !important;
         backdrop-filter: blur(14px) !important;
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.55) !important;
-    }
+    }}
 
-    /* 7. Separadores / Tabs */
-    button[data-baseweb="tab"] {
+    button[data-baseweb="tab"] {{
         background: transparent !important;
         color: #94a3b8 !important;
         font-weight: 600 !important;
-    }
-    button[data-baseweb="tab"][aria-selected="true"] {
+    }}
+    button[data-baseweb="tab"][aria-selected="true"] {{
         color: #00D9D9 !important;
         border-bottom-color: #00D9D9 !important;
-    }
+    }}
 
-    /* 8. Cartões de Planos / Preços */
-    .pricing-card {
+    .pricing-card {{
         background: rgba(4, 8, 10, 0.86);
         border: 1px solid rgba(0, 217, 217, 0.24);
         border-radius: 14px;
@@ -184,8 +163,8 @@ st.markdown("""
         flex-direction: column;
         justify-content: space-between;
         backdrop-filter: blur(14px);
-    }
-    .pricing-card-featured {
+    }}
+    .pricing-card-featured {{
         background: linear-gradient(180deg, rgba(8, 16, 20, 0.94) 0%, rgba(3, 6, 8, 0.94) 100%);
         border: 2px solid #00D9D9;
         box-shadow: 0 8px 32px rgba(0, 217, 217, 0.25);
@@ -196,37 +175,45 @@ st.markdown("""
         flex-direction: column;
         justify-content: space-between;
         backdrop-filter: blur(16px);
-    }
-    .pricing-price {
+    }}
+    .pricing-price {{
         font-size: 32px;
         font-weight: 800;
         color: #ffffff;
         margin: 12px 0 4px 0;
-    }
-    .pricing-sub {
+    }}
+    .pricing-sub {{
         font-size: 13px;
         color: #94a3b8;
         margin-bottom: 20px;
-    }
-    .feature-list {
+    }}
+    .feature-list {{
         list-style: none;
         padding: 0;
         margin: 0 0 24px 0;
         font-size: 14px;
         color: #cbd5e1;
-    }
-    .feature-list li {
+    }}
+    .feature-list li {{
         margin-bottom: 10px;
         display: flex;
         align-items: center;
-    }
-    .check-icon {
+    }}
+    .check-icon {{
         color: #00D9D9;
         font-weight: bold;
         margin-right: 8px;
-    }
+    }}
     </style>
-""", unsafe_allow_html=True)
+
+    <video autoplay loop muted playsinline id="bg-video">
+        {fonte_b64}
+        {fonte_cdn}
+    </video>
+    """
+    st.markdown(video_html, unsafe_allow_html=True)
+
+carregar_fundo_video()
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
