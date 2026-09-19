@@ -13,8 +13,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- MOTOR WEBGL REAL: THE STATE OF THE GALLERY (NATIVO 4K + INTERATIVO AO RATO) ----------------
-def injetar_fundo_webgl_interativo():
+# ---------------- MOTOR WEBGL: PALETA MODERNA, SOFISTICADA E NÃO-CHAMATIVA ----------------
+def injetar_fundo_webgl_moderno():
     webgl_html = """
     <!DOCTYPE html>
     <html>
@@ -22,7 +22,7 @@ def injetar_fundo_webgl_interativo():
         <meta charset="utf-8">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #010405; }
+            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #020406; }
             canvas { width: 100%; height: 100%; display: block; }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -32,16 +32,14 @@ def injetar_fundo_webgl_interativo():
         <script>
             const canvas = document.getElementById('canvas-3d');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x010405, 0.028);
+            scene.fog = new THREE.FogExp2(0x020406, 0.026);
 
-            // Câmara rasante em perspectiva panorâmica cinematográfica
             const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.set(0, 1.4, 7.8);
             camera.rotation.x = -0.12;
 
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            // Garante nitidez máxima no monitor do utilizador (retina / 4K)
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
             const planeW = 44;
@@ -49,7 +47,7 @@ def injetar_fundo_webgl_interativo():
             const segX = 180;
             const segY = 130;
 
-            // 1. SHADER DO TERRENO LÍQUIDO ONDULANTE (DARK VELVET + FEIXE DE ÓLEO IRIDESCENTE)
+            // 1. SHADER DO TERRENO COM PALETA MODERNA E DISCRETA (ANTRACITE & PRATA)
             const terrainGeo = new THREE.PlaneGeometry(planeW, planeH, segX, segY);
 
             const terrainVertex = `
@@ -64,10 +62,10 @@ def injetar_fundo_webgl_interativo():
                 varying vec3 vWorldPos;
 
                 float getDunes(vec2 p, float t) {
-                    float h = sin(p.x * 0.24 + t * 0.35) * cos(p.y * 0.28 + t * 0.25) * 1.5;
-                    h += sin(p.x * 0.52 - t * 0.2 + p.y * 0.42) * 0.7;
-                    h += cos(p.x * 0.14 + p.y * 0.18) * 0.9;
-                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.6;
+                    float h = sin(p.x * 0.22 + t * 0.3) * cos(p.y * 0.25 + t * 0.2) * 1.4;
+                    h += sin(p.x * 0.48 - t * 0.15 + p.y * 0.38) * 0.65;
+                    h += cos(p.x * 0.12 + p.y * 0.15) * 0.8;
+                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.55;
                     return h;
                 }
 
@@ -77,7 +75,6 @@ def injetar_fundo_webgl_interativo():
 
                     float h = getDunes(pos.xy, uTime);
 
-                    // Deformação direta no ponto do cursor (Bulge)
                     float d = distance(pos.xy, uMouse);
                     vDist = d;
                     float bulge = smoothstep(uBulgeRadius, 0.0, d);
@@ -99,31 +96,32 @@ def injetar_fundo_webgl_interativo():
                 varying float vDist;
                 varying vec3 vWorldPos;
 
-                vec3 palette(float t) {
-                    vec3 a = vec3(0.18, 0.48, 0.42);
-                    vec3 b = vec3(0.42, 0.45, 0.45);
-                    vec3 c = vec3(1.0, 1.0, 1.0);
-                    vec3 d = vec3(0.0, 0.33, 0.67);
+                // Paleta corporativa moderna: tons de carvão, azul aço e prata subtil
+                vec3 modernPalette(float t) {
+                    vec3 a = vec3(0.08, 0.12, 0.16);
+                    vec3 b = vec3(0.12, 0.18, 0.22);
+                    vec3 c = vec3(0.8, 0.8, 0.8);
+                    vec3 d = vec3(0.1, 0.2, 0.4);
                     return a + b * cos(6.28318 * (c * t + d));
                 }
 
                 void main() {
-                    vec3 darkBase = vec3(0.015, 0.045, 0.03);
-                    vec3 deepValley = vec3(0.005, 0.015, 0.01);
+                    vec3 darkBase = vec3(0.015, 0.022, 0.03);
+                    vec3 deepValley = vec3(0.005, 0.008, 0.012);
                     float hf = smoothstep(-1.5, 2.5, vElevation);
                     vec3 col = mix(deepValley, darkBase, hf);
 
-                    // Feixe iridescente no vale central
+                    // Efeito iridescente corporativo muito suave no vale central
                     float trough = smoothstep(5.2, 0.0, abs(vWorldPos.x));
-                    float pt = vWorldPos.y * 0.14 + vElevation * 0.35 + sin(uTime * 0.35) * 0.18;
-                    vec3 rainbow = palette(pt);
-                    col = mix(col, rainbow * 0.8, trough * 0.6);
+                    float pt = vWorldPos.y * 0.1 + vElevation * 0.3 + sin(uTime * 0.25) * 0.15;
+                    vec3 subtleSheen = modernPalette(pt);
+                    col = mix(col, subtleSheen * 0.5, trough * 0.45);
 
-                    // Destaque luminoso sob o rato
-                    float mouseLight = smoothstep(3.5, 0.0, vDist);
-                    col += vec3(0.12, 0.32, 0.22) * mouseLight;
+                    // Suave iluminação sob o cursor
+                    float mouseLight = smoothstep(3.8, 0.0, vDist);
+                    col += vec3(0.04, 0.12, 0.15) * mouseLight;
 
-                    gl_FragColor = vec4(col, 0.95);
+                    gl_FragColor = vec4(col, 0.92);
                 }
             `;
 
@@ -134,7 +132,7 @@ def injetar_fundo_webgl_interativo():
                     uTime: { value: 0 },
                     uMouse: { value: new THREE.Vector2(-100, -100) },
                     uBulgeRadius: { value: 5.2 },
-                    uBulgeStrength: { value: 2.8 }
+                    uBulgeStrength: { value: 2.6 }
                 },
                 transparent: true,
                 side: THREE.DoubleSide
@@ -145,7 +143,7 @@ def injetar_fundo_webgl_interativo():
             terrain.position.y = -1.6;
             scene.add(terrain);
 
-            // 2. SHADER DAS PARTÍCULAS EM SUSPENSÃO (ULTRA-NÍTIDAS 4K, DOURADAS & VERDE-LIMA)
+            // 2. SHADER DAS PARTÍCULAS (PRATA ESPACIAL & TURQUESA PASTEL DESATURADO)
             const particlesGeo = new THREE.PlaneGeometry(planeW, planeH, 160, 120);
 
             const particlesVertex = `
@@ -158,10 +156,10 @@ def injetar_fundo_webgl_interativo():
                 varying float vDist;
 
                 float getDunes(vec2 p, float t) {
-                    float h = sin(p.x * 0.24 + t * 0.35) * cos(p.y * 0.28 + t * 0.25) * 1.5;
-                    h += sin(p.x * 0.52 - t * 0.2 + p.y * 0.42) * 0.7;
-                    h += cos(p.x * 0.14 + p.y * 0.18) * 0.9;
-                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.6;
+                    float h = sin(p.x * 0.22 + t * 0.3) * cos(p.y * 0.25 + t * 0.2) * 1.4;
+                    h += sin(p.x * 0.48 - t * 0.15 + p.y * 0.38) * 0.65;
+                    h += cos(p.x * 0.12 + p.y * 0.15) * 0.8;
+                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.55;
                     return h;
                 }
 
@@ -174,13 +172,12 @@ def injetar_fundo_webgl_interativo():
                     float bulge = smoothstep(uBulgeRadius, 0.0, d);
                     bulge = pow(bulge, 1.8) * uBulgeStrength;
 
-                    // Flutua sobre as cristas do relevo
                     pos.z += h + bulge + 0.14;
                     vElevation = pos.z;
 
                     vec4 mvp = modelViewMatrix * vec4(pos, 1.0);
                     float sizeBoost = smoothstep(-0.5, 2.2, pos.z);
-                    gl_PointSize = (22.0 / -mvp.z) * (0.85 + sizeBoost * 1.35 + bulge * 0.8);
+                    gl_PointSize = (20.0 / -mvp.z) * (0.8 + sizeBoost * 1.2 + bulge * 0.7);
                     gl_Position = projectionMatrix * mvp;
                 }
             `;
@@ -192,21 +189,20 @@ def injetar_fundo_webgl_interativo():
                 void main() {
                     float dist = length(gl_PointCoord - vec2(0.5));
                     if (dist > 0.5) discard;
-                    float alpha = smoothstep(0.5, 0.05, dist);
+                    float alpha = smoothstep(0.5, 0.08, dist);
 
-                    // Cores idênticas às partículas do Awwwards
-                    vec3 gold = vec3(0.92, 0.88, 0.24);
-                    vec3 lime = vec3(0.52, 0.92, 0.28);
-                    vec3 turquoise = vec3(0.0, 0.85, 0.85);
+                    // Tons modernos e elegantes: prata, aço e ciano desaturado
+                    vec3 silver = vec3(0.65, 0.72, 0.78);
+                    vec3 steelBlue = vec3(0.25, 0.45, 0.58);
+                    vec3 mutedCyan = vec3(0.08, 0.52, 0.55);
 
-                    float hFactor = smoothstep(0.0, 2.5, vElevation);
-                    vec3 col = mix(turquoise, mix(lime, gold, hFactor), hFactor);
+                    float hFactor = smoothstep(0.0, 2.4, vElevation);
+                    vec3 col = mix(mutedCyan, mix(steelBlue, silver, hFactor), hFactor);
 
-                    // Reação de brilho sob o rato
                     float hoverSpark = smoothstep(3.2, 0.0, vDist);
-                    col += vec3(0.3, 0.3, 0.15) * hoverSpark;
+                    col += vec3(0.15, 0.3, 0.35) * hoverSpark;
 
-                    gl_FragColor = vec4(col, alpha * 0.92);
+                    gl_FragColor = vec4(col, alpha * 0.75);
                 }
             `;
 
@@ -217,7 +213,7 @@ def injetar_fundo_webgl_interativo():
                     uTime: { value: 0 },
                     uMouse: { value: new THREE.Vector2(-100, -100) },
                     uBulgeRadius: { value: 5.2 },
-                    uBulgeStrength: { value: 2.8 }
+                    uBulgeStrength: { value: 2.6 }
                 },
                 transparent: true,
                 depthWrite: false,
@@ -229,7 +225,7 @@ def injetar_fundo_webgl_interativo():
             particles.position.y = -1.6;
             scene.add(particles);
 
-            // 3. CAPTURA DO RATO COM RAYCASTING (REAGE AO MOVIMENTO NO ECRÃ INTEIRO)
+            // 3. RAYCASTING PARA O RATO
             const raycaster = new THREE.Raycaster();
             const mouseScreen = new THREE.Vector2(-10, -10);
             const targetPos = new THREE.Vector2(-100, -100);
@@ -246,7 +242,6 @@ def injetar_fundo_webgl_interativo():
                 }
             }
 
-            // Ouve o movimento do rato mesmo sobre o conteúdo da página
             try {
                 window.parent.addEventListener('mousemove', (e) => {
                     onPointerMove(e.clientX, e.clientY, window.parent.innerWidth, window.parent.innerHeight);
@@ -262,7 +257,7 @@ def injetar_fundo_webgl_interativo():
                 });
             }
 
-            // 4. LOOP DE ANIMAÇÃO A 60 FPS COM DEFORMAÇÃO EM TEMPO REAL
+            // 4. LOOP DE ANIMAÇÃO A 60 FPS
             const clock = new THREE.Clock();
             function animate() {
                 requestAnimationFrame(animate);
@@ -271,14 +266,12 @@ def injetar_fundo_webgl_interativo():
                 terrainMat.uniforms.uTime.value = elapsed;
                 particlesMat.uniforms.uTime.value = elapsed;
 
-                // Transição suave para o ponto onde o rato passa (Lerp)
                 currentPos.lerp(targetPos, 0.08);
                 terrainMat.uniforms.uMouse.value.copy(currentPos);
                 particlesMat.uniforms.uMouse.value.copy(currentPos);
 
-                // Flutuação subtil e elegante da câmara
-                camera.position.x = Math.sin(elapsed * 0.2) * 0.35;
-                camera.position.y = 1.4 + Math.cos(elapsed * 0.16) * 0.15;
+                camera.position.x = Math.sin(elapsed * 0.18) * 0.3;
+                camera.position.y = 1.4 + Math.cos(elapsed * 0.14) * 0.12;
 
                 renderer.render(scene, camera);
             }
@@ -296,17 +289,16 @@ def injetar_fundo_webgl_interativo():
     """
     components.html(webgl_html, height=0)
 
-injetar_fundo_webgl_interativo()
+injetar_fundo_webgl_moderno()
 
-# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
+# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM CORPORATIVO ----------------
 st.markdown("""
     <style>
-    /* 1. Transparência Global */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
         background: transparent !important;
     }
     body {
-        background-color: #010405 !important;
+        background-color: #020406 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -337,26 +329,25 @@ st.markdown("""
         padding-top: 1.8rem !important;
     }
 
-    /* 2. Cartões Glassmorphism Translúcidos com desfoque de fundo */
     .glass-card {
-        background: rgba(2, 6, 8, 0.45) !important;
-        border: 1px solid rgba(0, 217, 217, 0.35) !important;
+        background: rgba(8, 14, 20, 0.65) !important;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
     }
 
     .main-header {
-        background: linear-gradient(135deg, rgba(2, 6, 8, 0.55) 0%, rgba(1, 3, 4, 0.45) 100%) !important;
-        border: 1px solid rgba(0, 217, 217, 0.4) !important;
+        background: linear-gradient(135deg, rgba(10, 18, 26, 0.75) 0%, rgba(4, 8, 12, 0.75) 100%) !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.7);
     }
 
     .badge-pill {
@@ -370,74 +361,73 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .badge-turquoise { 
-        background: rgba(0, 217, 217, 0.2) !important; 
-        color: #00D9D9 !important; 
-        border: 1px solid rgba(0, 217, 217, 0.5) !important; 
+        background: rgba(56, 189, 248, 0.12) !important; 
+        color: #38bdf8 !important; 
+        border: 1px solid rgba(56, 189, 248, 0.3) !important; 
     }
     .badge-purple { 
-        background: rgba(168, 85, 247, 0.2) !important; 
+        background: rgba(168, 85, 247, 0.12) !important; 
         color: #c084fc !important; 
-        border: 1px solid rgba(168, 85, 247, 0.4) !important; 
+        border: 1px solid rgba(168, 85, 247, 0.3) !important; 
     }
 
     div[data-testid="stMetric"] {
-        background: rgba(2, 6, 8, 0.5) !important;
-        border: 1px solid rgba(0, 217, 217, 0.3) !important;
+        background: rgba(8, 14, 20, 0.7) !important;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
         padding: 16px;
         border-radius: 12px;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
     }
     div[data-testid="stMetricLabel"] p {
-        color: #cbd5e1 !important;
+        color: #94a3b8 !important;
         font-size: 12px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     div[data-testid="stMetricValue"] div {
-        color: #00D9D9 !important;
+        color: #f8fafc !important;
         font-size: 24px !important;
         font-weight: 700;
-        text-shadow: 0 0 15px rgba(0, 217, 217, 0.4);
     }
 
     div[data-testid="stFileUploader"] {
-        background: rgba(2, 6, 8, 0.5) !important;
-        border: 1px dashed rgba(0, 217, 217, 0.5) !important;
+        background: rgba(8, 14, 20, 0.7) !important;
+        border: 1px dashed rgba(148, 163, 184, 0.3) !important;
         border-radius: 14px !important;
         padding: 18px !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5) !important;
     }
 
     button[data-baseweb="tab"] {
         background: transparent !important;
-        color: #cbd5e1 !important;
+        color: #94a3b8 !important;
         font-weight: 600 !important;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        color: #00D9D9 !important;
-        border-bottom-color: #00D9D9 !important;
+        color: #38bdf8 !important;
+        border-bottom-color: #38bdf8 !important;
     }
 
     .pricing-card {
-        background: rgba(2, 6, 8, 0.55);
-        border: 1px solid rgba(0, 217, 217, 0.3);
+        background: rgba(8, 14, 20, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px);
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, rgba(0, 217, 217, 0.15) 0%, rgba(2, 6, 8, 0.6) 100%);
-        border: 2px solid #00D9D9;
-        box-shadow: 0 8px 32px rgba(0, 217, 217, 0.35);
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.1) 0%, rgba(8, 14, 20, 0.75) 100%);
+        border: 2px solid #38bdf8;
+        box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -449,12 +439,12 @@ st.markdown("""
     .pricing-price {
         font-size: 32px;
         font-weight: 800;
-        color: #ffffff;
+        color: #f8fafc;
         margin: 12px 0 4px 0;
     }
     .pricing-sub {
         font-size: 13px;
-        color: #cbd5e1;
+        color: #94a3b8;
         margin-bottom: 20px;
     }
     .feature-list {
@@ -462,7 +452,7 @@ st.markdown("""
         padding: 0;
         margin: 0 0 24px 0;
         font-size: 14px;
-        color: #f1f5f9;
+        color: #cbd5e1;
     }
     .feature-list li {
         margin-bottom: 10px;
@@ -470,7 +460,7 @@ st.markdown("""
         align-items: center;
     }
     .check-icon {
-        color: #00D9D9;
+        color: #38bdf8;
         font-weight: bold;
         margin-right: 8px;
     }
@@ -570,7 +560,7 @@ def exibir_tabela_precos():
         <div class="pricing-card">
             <div>
                 <span class="badge-pill badge-turquoise">Diagnóstico</span>
-                <h3 style="margin: 0; color: #ffffff;">Acesso Gratuito</h3>
+                <h3 style="margin: 0; color: #f8fafc;">Acesso Gratuito</h3>
                 <div class="pricing-price">0 €</div>
                 <div class="pricing-sub">Para testes e diagnósticos pontuais</div>
                 <ul class="feature-list">
@@ -589,8 +579,8 @@ def exibir_tabela_precos():
         <div class="pricing-card">
             <div>
                 <span class="badge-pill badge-turquoise">Empresas</span>
-                <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
-                <div class="pricing-price">29 € <span style="font-size: 15px; color: #cbd5e1; font-weight: normal;">/mês</span></div>
+                <h3 style="margin: 0; color: #f8fafc;">PME Gestão</h3>
+                <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Acompanhamento executivo contínuo</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
@@ -611,8 +601,8 @@ def exibir_tabela_precos():
         <div class="pricing-card-featured">
             <div>
                 <span class="badge-pill badge-purple">⭐ Mais Escolhido</span>
-                <h3 style="margin: 0; color: #ffffff;">Gabinete Pro</h3>
-                <div class="pricing-price">79 € <span style="font-size: 15px; color: #00D9D9; font-weight: normal;">/mês</span></div>
+                <h3 style="margin: 0; color: #f8fafc;">Gabinete Pro</h3>
+                <div class="pricing-price">79 € <span style="font-size: 15px; color: #38bdf8; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Para Gabinetes de Contabilidade & TOCs</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b></li>
@@ -632,9 +622,9 @@ def exibir_tabela_precos():
 st.markdown("""
 <div class="main-header">
     <span class="badge-pill badge-turquoise">⚡ PLATAFORMA CORPORATIVA • SAF-T ANALYTICS</span>
-    <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
-    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
-    <p style="margin: 8px 0 0 0; color: #e2e8f0; font-size: 0.95rem;">
+    <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #f8fafc;">SAF-T Intelligence Pro</h1>
+    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #38bdf8;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
+    <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
         Processamento seguro de ficheiros fiscais, apuramento de volume real sem notas de crédito, matriz 80/20 e conferência de IVA.
     </p>
 </div>
@@ -652,8 +642,8 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Segurança Corporativa</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
-            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
+            <h3 style="margin-top: 8px; color: #f8fafc;">🔒 100% In-Memory (RGPD)</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Os dados fiscais e documentos são analisados estritamente na memória da sessão de navegação. Nenhum valor comercial é gravado em bases de dados externas.
             </p>
         </div>
@@ -663,8 +653,8 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
-            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
+            <h3 style="margin-top: 8px; color: #f8fafc;">📊 Curva ABC & Risco 80/20</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Identifica os clientes críticos que asseguram 80% do fluxo de caixa e obtém alertas automáticos sobre dependência excessiva de faturação.
             </p>
         </div>
@@ -674,8 +664,8 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
-            <p style="color: #cbd5e1; font-size: 14px; margin-top: 6px;">
+            <h3 style="margin-top: 8px; color: #f8fafc;">⚖️ Auditoria de IVA</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Resumo instantâneo de faturas emitidas vs. notas de crédito, discriminado por escalões de imposto (Normal 23%, Intermédia, Reduzida e Isenções).
             </p>
         </div>
@@ -751,7 +741,7 @@ else:
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df_diario = df.groupby(df['Data_dt'].dt.date)['ValorBruto'].sum().reset_index()
             df_diario.columns = ['Data', 'Faturação Diária (€)']
-            st.line_chart(df_diario.set_index('Data'), color="#00D9D9")
+            st.line_chart(df_diario.set_index('Data'), color="#38bdf8")
 
         # TAB 2: CURVA ABC
         with tab_abc:
@@ -785,7 +775,7 @@ else:
             col_abc_chart, col_abc_table = st.columns([1.2, 1])
             with col_abc_chart:
                 st.subheader("Top Clientes da Carteira")
-                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#00D9D9")
+                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#38bdf8")
 
             with col_abc_table:
                 st.subheader("Detetor Estratégico")
