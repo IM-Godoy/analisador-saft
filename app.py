@@ -1,11 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import xml.etree.ElementTree as ET
 import pandas as pd
 import urllib.parse
 import urllib.request
 import json
-import base64
-import os
 
 st.set_page_config(
     page_title="SAF-T Intelligence Pro | Plataforma Executiva B2B", 
@@ -14,65 +13,332 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- INJEÇÃO DE VÍDEO DE FUNDO (BRILHO E COR ORIGINAIS 100%) ----------------
-def carregar_fundo_video():
-    video_b64 = ""
-    caminhos = ["background.mp4", os.path.join(os.path.dirname(__file__), "background.mp4")]
-    for p in caminhos:
-        if os.path.exists(p):
-            try:
-                with open(p, "rb") as f:
-                    video_b64 = base64.b64encode(f.read()).decode("utf-8")
-                if video_b64:
-                    break
-            except Exception:
-                pass
+# ---------------- MOTOR WEBGL REAL: THE STATE OF THE GALLERY (NATIVO 4K + INTERATIVO AO RATO) ----------------
+def injetar_fundo_webgl_interativo():
+    webgl_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #010405; }
+            canvas { width: 100%; height: 100%; display: block; }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body>
+        <canvas id="canvas-3d"></canvas>
+        <script>
+            const canvas = document.getElementById('canvas-3d');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x010405, 0.028);
 
-    fonte_b64 = f'<source src="data:video/mp4;base64,{video_b64}" type="video/mp4">' if video_b64 else ''
-    fonte_cdn = '<source src="https://cdn.jsdelivr.net/gh/IM-Godoy/analisador-saft@main/background.mp4" type="video/mp4">'
+            // Câmara rasante em perspectiva panorâmica cinematográfica
+            const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.4, 7.8);
+            camera.rotation.x = -0.12;
 
-    video_html = f"""
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // Garante nitidez máxima no monitor do utilizador (retina / 4K)
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const planeW = 44;
+            const planeH = 32;
+            const segX = 180;
+            const segY = 130;
+
+            // 1. SHADER DO TERRENO LÍQUIDO ONDULANTE (DARK VELVET + FEIXE DE ÓLEO IRIDESCENTE)
+            const terrainGeo = new THREE.PlaneGeometry(planeW, planeH, segX, segY);
+
+            const terrainVertex = `
+                uniform float uTime;
+                uniform vec2 uMouse;
+                uniform float uBulgeRadius;
+                uniform float uBulgeStrength;
+
+                varying vec2 vUv;
+                varying float vElevation;
+                varying float vDist;
+                varying vec3 vWorldPos;
+
+                float getDunes(vec2 p, float t) {
+                    float h = sin(p.x * 0.24 + t * 0.35) * cos(p.y * 0.28 + t * 0.25) * 1.5;
+                    h += sin(p.x * 0.52 - t * 0.2 + p.y * 0.42) * 0.7;
+                    h += cos(p.x * 0.14 + p.y * 0.18) * 0.9;
+                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.6;
+                    return h;
+                }
+
+                void main() {
+                    vUv = uv;
+                    vec3 pos = position;
+
+                    float h = getDunes(pos.xy, uTime);
+
+                    // Deformação direta no ponto do cursor (Bulge)
+                    float d = distance(pos.xy, uMouse);
+                    vDist = d;
+                    float bulge = smoothstep(uBulgeRadius, 0.0, d);
+                    bulge = pow(bulge, 1.8) * uBulgeStrength;
+
+                    pos.z += h + bulge;
+                    vElevation = pos.z;
+
+                    vec4 wp = modelMatrix * vec4(pos, 1.0);
+                    vWorldPos = wp.xyz;
+                    gl_Position = projectionMatrix * viewMatrix * wp;
+                }
+            `;
+
+            const terrainFragment = `
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                varying float vDist;
+                varying vec3 vWorldPos;
+
+                vec3 palette(float t) {
+                    vec3 a = vec3(0.18, 0.48, 0.42);
+                    vec3 b = vec3(0.42, 0.45, 0.45);
+                    vec3 c = vec3(1.0, 1.0, 1.0);
+                    vec3 d = vec3(0.0, 0.33, 0.67);
+                    return a + b * cos(6.28318 * (c * t + d));
+                }
+
+                void main() {
+                    vec3 darkBase = vec3(0.015, 0.045, 0.03);
+                    vec3 deepValley = vec3(0.005, 0.015, 0.01);
+                    float hf = smoothstep(-1.5, 2.5, vElevation);
+                    vec3 col = mix(deepValley, darkBase, hf);
+
+                    // Feixe iridescente no vale central
+                    float trough = smoothstep(5.2, 0.0, abs(vWorldPos.x));
+                    float pt = vWorldPos.y * 0.14 + vElevation * 0.35 + sin(uTime * 0.35) * 0.18;
+                    vec3 rainbow = palette(pt);
+                    col = mix(col, rainbow * 0.8, trough * 0.6);
+
+                    // Destaque luminoso sob o rato
+                    float mouseLight = smoothstep(3.5, 0.0, vDist);
+                    col += vec3(0.12, 0.32, 0.22) * mouseLight;
+
+                    gl_FragColor = vec4(col, 0.95);
+                }
+            `;
+
+            const terrainMat = new THREE.ShaderMaterial({
+                vertexShader: terrainVertex,
+                fragmentShader: terrainFragment,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uMouse: { value: new THREE.Vector2(-100, -100) },
+                    uBulgeRadius: { value: 5.2 },
+                    uBulgeStrength: { value: 2.8 }
+                },
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+
+            const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+            terrain.rotation.x = -Math.PI / 2.38;
+            terrain.position.y = -1.6;
+            scene.add(terrain);
+
+            // 2. SHADER DAS PARTÍCULAS EM SUSPENSÃO (ULTRA-NÍTIDAS 4K, DOURADAS & VERDE-LIMA)
+            const particlesGeo = new THREE.PlaneGeometry(planeW, planeH, 160, 120);
+
+            const particlesVertex = `
+                uniform float uTime;
+                uniform vec2 uMouse;
+                uniform float uBulgeRadius;
+                uniform float uBulgeStrength;
+
+                varying float vElevation;
+                varying float vDist;
+
+                float getDunes(vec2 p, float t) {
+                    float h = sin(p.x * 0.24 + t * 0.35) * cos(p.y * 0.28 + t * 0.25) * 1.5;
+                    h += sin(p.x * 0.52 - t * 0.2 + p.y * 0.42) * 0.7;
+                    h += cos(p.x * 0.14 + p.y * 0.18) * 0.9;
+                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.6;
+                    return h;
+                }
+
+                void main() {
+                    vec3 pos = position;
+                    float h = getDunes(pos.xy, uTime);
+
+                    float d = distance(pos.xy, uMouse);
+                    vDist = d;
+                    float bulge = smoothstep(uBulgeRadius, 0.0, d);
+                    bulge = pow(bulge, 1.8) * uBulgeStrength;
+
+                    // Flutua sobre as cristas do relevo
+                    pos.z += h + bulge + 0.14;
+                    vElevation = pos.z;
+
+                    vec4 mvp = modelViewMatrix * vec4(pos, 1.0);
+                    float sizeBoost = smoothstep(-0.5, 2.2, pos.z);
+                    gl_PointSize = (22.0 / -mvp.z) * (0.85 + sizeBoost * 1.35 + bulge * 0.8);
+                    gl_Position = projectionMatrix * mvp;
+                }
+            `;
+
+            const particlesFragment = `
+                varying float vElevation;
+                varying float vDist;
+
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = smoothstep(0.5, 0.05, dist);
+
+                    // Cores idênticas às partículas do Awwwards
+                    vec3 gold = vec3(0.92, 0.88, 0.24);
+                    vec3 lime = vec3(0.52, 0.92, 0.28);
+                    vec3 turquoise = vec3(0.0, 0.85, 0.85);
+
+                    float hFactor = smoothstep(0.0, 2.5, vElevation);
+                    vec3 col = mix(turquoise, mix(lime, gold, hFactor), hFactor);
+
+                    // Reação de brilho sob o rato
+                    float hoverSpark = smoothstep(3.2, 0.0, vDist);
+                    col += vec3(0.3, 0.3, 0.15) * hoverSpark;
+
+                    gl_FragColor = vec4(col, alpha * 0.92);
+                }
+            `;
+
+            const particlesMat = new THREE.ShaderMaterial({
+                vertexShader: particlesVertex,
+                fragmentShader: particlesFragment,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uMouse: { value: new THREE.Vector2(-100, -100) },
+                    uBulgeRadius: { value: 5.2 },
+                    uBulgeStrength: { value: 2.8 }
+                },
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particles = new THREE.Points(particlesGeo, particlesMat);
+            particles.rotation.x = -Math.PI / 2.38;
+            particles.position.y = -1.6;
+            scene.add(particles);
+
+            // 3. CAPTURA DO RATO COM RAYCASTING (REAGE AO MOVIMENTO NO ECRÃ INTEIRO)
+            const raycaster = new THREE.Raycaster();
+            const mouseScreen = new THREE.Vector2(-10, -10);
+            const targetPos = new THREE.Vector2(-100, -100);
+            const currentPos = new THREE.Vector2(-100, -100);
+
+            function onPointerMove(clientX, clientY, w, h) {
+                mouseScreen.x = (clientX / w) * 2 - 1;
+                mouseScreen.y = -(clientY / h) * 2 + 1;
+                raycaster.setFromCamera(mouseScreen, camera);
+                const hits = raycaster.intersectObject(terrain);
+                if (hits.length > 0) {
+                    const localPt = terrain.worldToLocal(hits[0].point.clone());
+                    targetPos.set(localPt.x, localPt.y);
+                }
+            }
+
+            // Ouve o movimento do rato mesmo sobre o conteúdo da página
+            try {
+                window.parent.addEventListener('mousemove', (e) => {
+                    onPointerMove(e.clientX, e.clientY, window.parent.innerWidth, window.parent.innerHeight);
+                });
+                window.parent.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        onPointerMove(e.touches[0].clientX, e.touches[0].clientY, window.parent.innerWidth, window.parent.innerHeight);
+                    }
+                });
+            } catch (err) {
+                window.addEventListener('mousemove', (e) => {
+                    onPointerMove(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
+                });
+            }
+
+            // 4. LOOP DE ANIMAÇÃO A 60 FPS COM DEFORMAÇÃO EM TEMPO REAL
+            const clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+                const elapsed = clock.getElapsedTime();
+
+                terrainMat.uniforms.uTime.value = elapsed;
+                particlesMat.uniforms.uTime.value = elapsed;
+
+                // Transição suave para o ponto onde o rato passa (Lerp)
+                currentPos.lerp(targetPos, 0.08);
+                terrainMat.uniforms.uMouse.value.copy(currentPos);
+                particlesMat.uniforms.uMouse.value.copy(currentPos);
+
+                // Flutuação subtil e elegante da câmara
+                camera.position.x = Math.sin(elapsed * 0.2) * 0.35;
+                camera.position.y = 1.4 + Math.cos(elapsed * 0.16) * 0.15;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            });
+        </script>
+    </body>
+    </html>
+    """
+    components.html(webgl_html, height=0)
+
+injetar_fundo_webgl_interativo()
+
+# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
+st.markdown("""
     <style>
-    /* 1. Transparência total em todos os contentores nativos do Streamlit */
-    html, body, .stApp, 
-    [data-testid="stAppViewContainer"], 
-    [data-testid="stAppViewBlockContainer"],
-    [data-testid="stHeader"], 
-    .main, section.main {{
+    /* 1. Transparência Global */
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
         background: transparent !important;
-        background-color: transparent !important;
-    }}
-    body {{
-        background-color: #010304 !important;
+    }
+    body {
+        background-color: #010405 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-    }}
+    }
 
-    /* 2. Fixa o vídeo em tela cheia na sua intensidade e brilho 100% originais */
-    #bg-video {{
+    div[data-testid="stCustomComponentV1"],
+    iframe {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        min-width: 100% !important;
-        min-height: 100% !important;
-        object-fit: cover !important;
-        z-index: -999999 !important;
-        filter: none !important;
-        opacity: 1 !important;
+        z-index: -9999 !important;
+        border: none !important;
         pointer-events: none !important;
-    }}
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
-    /* 3. Camada de conteúdo principal */
-    .block-container {{
+    .element-container:has(div[data-testid="stCustomComponentV1"]) {
+        position: absolute !important;
+        height: 0px !important;
+        overflow: hidden !important;
+    }
+
+    .block-container {
         position: relative !important;
         z-index: 10 !important;
         max-width: 1200px !important;
         padding-top: 1.8rem !important;
-    }}
+    }
 
-    /* 4. Cartões Glassmorphism Translúcidos (revelam o vídeo no fundo) */
-    .glass-card {{
+    /* 2. Cartões Glassmorphism Translúcidos com desfoque de fundo */
+    .glass-card {
         background: rgba(2, 6, 8, 0.45) !important;
         border: 1px solid rgba(0, 217, 217, 0.35) !important;
         border-radius: 14px !important;
@@ -80,9 +346,9 @@ def carregar_fundo_video():
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    }}
+    }
 
-    .main-header {{
+    .main-header {
         background: linear-gradient(135deg, rgba(2, 6, 8, 0.55) 0%, rgba(1, 3, 4, 0.45) 100%) !important;
         border: 1px solid rgba(0, 217, 217, 0.4) !important;
         border-radius: 16px;
@@ -91,9 +357,9 @@ def carregar_fundo_video():
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         box-shadow: 0 8px 35px rgba(0, 0, 0, 0.6);
-    }}
+    }
 
-    .badge-pill {{
+    .badge-pill {
         display: inline-block;
         padding: 5px 14px;
         font-size: 11px;
@@ -102,19 +368,19 @@ def carregar_fundo_video():
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 8px;
-    }}
-    .badge-turquoise {{ 
-        background: rgba(0, 217, 217, 0.2); 
-        color: #00D9D9; 
-        border: 1px solid rgba(0, 217, 217, 0.5); 
-    }}
-    .badge-purple {{ 
-        background: rgba(168, 85, 247, 0.2); 
-        color: #c084fc; 
-        border: 1px solid rgba(168, 85, 247, 0.4); 
-    }}
+    }
+    .badge-turquoise { 
+        background: rgba(0, 217, 217, 0.2) !important; 
+        color: #00D9D9 !important; 
+        border: 1px solid rgba(0, 217, 217, 0.5) !important; 
+    }
+    .badge-purple { 
+        background: rgba(168, 85, 247, 0.2) !important; 
+        color: #c084fc !important; 
+        border: 1px solid rgba(168, 85, 247, 0.4) !important; 
+    }
 
-    div[data-testid="stMetric"] {{
+    div[data-testid="stMetric"] {
         background: rgba(2, 6, 8, 0.5) !important;
         border: 1px solid rgba(0, 217, 217, 0.3) !important;
         padding: 16px;
@@ -122,22 +388,22 @@ def carregar_fundo_video():
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-    }}
-    div[data-testid="stMetricLabel"] p {{
+    }
+    div[data-testid="stMetricLabel"] p {
         color: #cbd5e1 !important;
         font-size: 12px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-    }}
-    div[data-testid="stMetricValue"] div {{
+    }
+    div[data-testid="stMetricValue"] div {
         color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
         text-shadow: 0 0 15px rgba(0, 217, 217, 0.4);
-    }}
+    }
 
-    div[data-testid="stFileUploader"] {{
+    div[data-testid="stFileUploader"] {
         background: rgba(2, 6, 8, 0.5) !important;
         border: 1px dashed rgba(0, 217, 217, 0.5) !important;
         border-radius: 14px !important;
@@ -145,19 +411,19 @@ def carregar_fundo_video():
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.45) !important;
-    }}
+    }
 
-    button[data-baseweb="tab"] {{
+    button[data-baseweb="tab"] {
         background: transparent !important;
         color: #cbd5e1 !important;
         font-weight: 600 !important;
-    }}
-    button[data-baseweb="tab"][aria-selected="true"] {{
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
         color: #00D9D9 !important;
         border-bottom-color: #00D9D9 !important;
-    }}
+    }
 
-    .pricing-card {{
+    .pricing-card {
         background: rgba(2, 6, 8, 0.55);
         border: 1px solid rgba(0, 217, 217, 0.3);
         border-radius: 14px;
@@ -167,8 +433,8 @@ def carregar_fundo_video():
         flex-direction: column;
         justify-content: space-between;
         backdrop-filter: blur(12px);
-    }}
-    .pricing-card-featured {{
+    }
+    .pricing-card-featured {
         background: linear-gradient(180deg, rgba(0, 217, 217, 0.15) 0%, rgba(2, 6, 8, 0.6) 100%);
         border: 2px solid #00D9D9;
         box-shadow: 0 8px 32px rgba(0, 217, 217, 0.35);
@@ -179,45 +445,37 @@ def carregar_fundo_video():
         flex-direction: column;
         justify-content: space-between;
         backdrop-filter: blur(14px);
-    }}
-    .pricing-price {{
+    }
+    .pricing-price {
         font-size: 32px;
         font-weight: 800;
         color: #ffffff;
         margin: 12px 0 4px 0;
-    }}
-    .pricing-sub {{
+    }
+    .pricing-sub {
         font-size: 13px;
         color: #cbd5e1;
         margin-bottom: 20px;
-    }}
-    .feature-list {{
+    }
+    .feature-list {
         list-style: none;
         padding: 0;
         margin: 0 0 24px 0;
         font-size: 14px;
         color: #f1f5f9;
-    }}
-    .feature-list li {{
+    }
+    .feature-list li {
         margin-bottom: 10px;
         display: flex;
         align-items: center;
-    }}
-    .check-icon {{
+    }
+    .check-icon {
         color: #00D9D9;
         font-weight: bold;
         margin-right: 8px;
-    }}
+    }
     </style>
-
-    <video autoplay loop muted playsinline id="bg-video">
-        {fonte_b64}
-        {fonte_cdn}
-    </video>
-    """
-    st.markdown(video_html, unsafe_allow_html=True)
-
-carregar_fundo_video()
+""", unsafe_allow_html=True)
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
