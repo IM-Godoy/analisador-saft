@@ -586,7 +586,7 @@ ficheiro_upload = st.file_uploader(
     type=["xml", "xlsx", "xls", "csv"]
 )
 
-# Injetar o túnel dinâmico idêntico e em constante movimento em ambas as telas
+# Injetar o fundo túnel idêntico e em constante movimento em ambas as telas
 injetar_fundo_tunel()
 
 # ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
@@ -645,7 +645,7 @@ else:
             
             df, df_tax = processar_documento_comercial(bytes_data, filename_str)
             
-            # Enriquecer DataFrame com colunas de data para filtros Power BI (Com mapeamento seguro em Python)
+            # Enriquecer DataFrame com colunas de data (Com mapeamento seguro em Python)
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df['Ano'] = df['Data_dt'].dt.year.fillna(2026).astype(int)
             
@@ -655,28 +655,23 @@ else:
 
             status_process.update(label="✅ Auditoria fiscal e modelo DAX concluídos com sucesso!", state="complete", expanded=False)
 
-        # ---------------- BARRA DE FILTROS ESTILO POWER BI (DAX SLICERS) ----------------
-        st.markdown("### 🎛️ Filtros Analíticos (Segmentação Power BI)")
-        f_col1, f_col2, f_col3, f_col4 = st.columns(4)
-
+        # ---------------- BARRA DE FILTROS ESTILO DASHBOARD EXECUTIVO (PILLS / BOTÕES) ----------------
+        st.markdown("### 🎛️ Filtros Rápidos de Período")
+        
         anos_disponiveis = sorted(df['Ano'].unique(), reverse=True)
-        anos_selecionados = f_col1.multiselect("Filtrar por Ano", options=anos_disponiveis, default=anos_disponiveis)
+        opcoes_ano = ["Todos"] + [str(a) for a in anos_disponiveis]
+        
+        # Filtro em pílulas horizontal no estilo da referência visual
+        ano_escolhido = st.pills("Selecione o Ano de Análise", options=opcoes_ano, default="Todos")
 
-        trimestres_disponiveis = sorted(df['Trimestre'].unique())
-        trimestres_selecionados = f_col2.multiselect("Filtrar por Trimestre", options=trimestres_disponiveis, default=trimestres_disponiveis)
-
-        clientes_disponiveis = sorted(df['Cliente'].unique())
-        clientes_selecionados = f_col3.multiselect("Filtrar por Cliente / Empresa", options=clientes_disponiveis, default=clientes_disponiveis)
-
-        # Aplicar filtros DAX
-        df_filtrado = df[
-            (df['Ano'].isin(anos_selecionados)) & 
-            (df['Trimestre'].isin(trimestres_selecionados)) & 
-            (df['Cliente'].isin(clientes_selecionados))
-        ]
+        # Filtrar DataFrame com base no seletor de ano
+        if ano_escolhido and ano_escolhido != "Todos":
+            df_filtrado = df[df['Ano'] == int(ano_escolhido)]
+        else:
+            df_filtrado = df.copy()
 
         if df_filtrado.empty:
-            st.warning("⚠️ Nenhum registo encontrado com os filtros selecionados. Por favor, ajuste os filtros acima.")
+            st.warning("⚠️ Nenhum registo encontrado para o período selecionado.")
         else:
             # Cálculos Globais com base no filtro
             faturas_positivas = df_filtrado[df_filtrado['Tipo'] != 'NC']
@@ -701,13 +696,13 @@ else:
 
             # NAVEGAÇÃO POR TABS
             tab_visao, tab_abc, tab_iva, tab_plano = st.tabs([
-                "📈 Visão Geral Executiva (Power BI)",
+                "📈 Visão Geral Executiva",
                 "👥 Curva ABC & Concentração",
                 "⚖️ Auditoria de IVA & Fiscal",
                 "💎 Planos & Relatório"
             ])
 
-            # TAB 1: VISÃO GERAL (POWER BI STYLE)
+            # TAB 1: VISÃO GERAL (DASHBOARD STYLE)
             with tab_visao:
                 st.markdown("#### Indicadores Principais de Saúde Comercial (Medidas DAX)")
                 c1, c2, c3, c4 = st.columns(4)
@@ -740,7 +735,7 @@ else:
                         st.success(f"✅ **Operação Eficiente:** Taxa de notas de crédito reduzida ({taxa_nc:.1f}%), dentro dos parâmetros ótimos.")
 
                 st.markdown("---")
-                st.markdown("#### Ritmo Diário de Vendas no Período Filtrado")
+                st.markdown("#### Ritmo Diário de Vendas no Período Selecionado")
                 df_diario = df_filtrado.groupby('Data_dt')['ValorBruto'].sum().reset_index()
                 df_diario.columns = ['Data', 'Faturação Diária (€)']
                 st.line_chart(df_diario.set_index('Data'), color="#00D9D9")
