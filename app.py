@@ -150,7 +150,7 @@ def injetar_fundo_tunel_suave():
 
 injetar_fundo_tunel_suave()
 
-# ---------------- ESTILOS VISUAIS: TEMA EXECUTIVO CORPORATIVO ----------------
+# ---------------- ESTILOS VISUAIS: CORPORATIVO ----------------
 st.markdown("""
     <style>
     html, body, .stApp, [data-testid="stAppViewContainer"], .main {
@@ -664,10 +664,10 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (TEMA EXECUTIVO CORPORATIVO)
+        # TAB 4: PLANOS & RELATÓRIO
         with tab_plano:
             st.markdown("#### 📄 Relatório Executivo Avançado (Pronto a Descarregar)")
-            st.caption("Descarregue o relatório detalhado num layout corporativo avançado, contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
+            st.caption("Descarregue o relatório detalhado contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
             
             html_linhas = ""
             for _, row in df_clientes_positivo.head(25).iterrows():
@@ -766,7 +766,7 @@ else:
             </html>"""
 
             st.download_button(
-                label="📥 Descarregar Relatório Executivo Avançado (Tema Executivo HTML)",
+                label="📥 Descarregar Relatório Executivo",
                 data=html_doc,
                 file_name="relatorio_saft_executivo_avancado.html",
                 mime="text/html"
