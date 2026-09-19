@@ -324,7 +324,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTORES DE PROCESSAMENTO BLINDADOS ----------------
+# ---------------- MOTORES DE PROCESSAMENTO 100% BLINDADOS ----------------
 def corrigir_texto(texto):
     if not texto:
         return ""
@@ -394,7 +394,7 @@ def processar_saft_xml(xml_bytes):
         dados_faturas.append({
             'Documento': doc_no,
             'Tipo': doc_type,
-            'Data': doc_date[:10],
+            'Data': str(doc_date)[:10],
             'Cliente': clientes.get(cust_id, f"Cliente {cust_id}"),
             'ValorBruto': valor_bruto,
             'ValorLiquido': valor_liquido,
@@ -432,8 +432,16 @@ def processar_saft_xml(xml_bytes):
 
     df_fat = pd.DataFrame(dados_faturas)
     if df_fat.empty:
-        raise ValueError("O ficheiro SAF-T XML não contém faturas ou registos de vendas elegíveis para análise.")
+        raise ValueError("O ficheiro SAF-T XML não contém faturas elegíveis para análise.")
         
+    # Garantir obrigatoriamente colunas chave para evitar erros de colunas em falta
+    for col in ['Documento', 'Tipo', 'Data', 'Cliente', 'ValorBruto', 'ValorLiquido', 'Imposto']:
+        if col not in df_fat.columns:
+            if col in ['ValorBruto', 'ValorLiquido', 'Imposto']:
+                df_fat[col] = 0.0
+            else:
+                df_fat[col] = 'N/D'
+
     df_tax = pd.DataFrame(dados_iva)
     return df_fat, df_tax
 
@@ -533,6 +541,15 @@ def processar_documento_comercial(file_bytes, filename):
                 raise ValueError("Nenhum registo de venda válido foi encontrado na tabela.")
 
             df_final = pd.DataFrame(dados_faturas)
+            
+            # Garantir obrigatoriamente colunas chave
+            for col in ['Documento', 'Tipo', 'Data', 'Cliente', 'ValorBruto', 'ValorLiquido', 'Imposto']:
+                if col not in df_final.columns:
+                    if col in ['ValorBruto', 'ValorLiquido', 'Imposto']:
+                        df_final[col] = 0.0
+                    else:
+                        df_final[col] = 'N/D'
+
             df_tax_final = pd.DataFrame([{
                 'TaxCode': 'NOR',
                 'TaxRate': 23.0,
