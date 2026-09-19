@@ -653,10 +653,12 @@ else:
             
             df, df_tax = processar_documento_comercial(bytes_data, filename_str)
             
-            # Enriquecer DataFrame com colunas de data para filtros Power BI
+            # Enriquecer DataFrame com colunas de data para filtros Power BI (Com mapeamento seguro em Python)
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df['Ano'] = df['Data_dt'].dt.year.fillna(2026).astype(int)
-            df['Mês'] = df['Data_dt'].dt.month_name(locale='pt_PT').fillna("Janeiro")
+            
+            meses_pt = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+            df['Mês'] = df['Data_dt'].dt.month.map(meses_pt).fillna("Janeiro")
             df['Trimestre'] = df['Data_dt'].dt.to_period('Q').astype(str).fillna("2026Q1")
 
             status_process.update(label="✅ Auditoria fiscal e modelo DAX concluídos com sucesso!", state="complete", expanded=False)
@@ -869,7 +871,7 @@ else:
                         <div class="header-top">
                             <div>
                                 <span class="badge">⚡ SAF-T Intelligence Pro • Executive Report</span>
-                               <h1>Auditoria Executiva e Diagnóstico Fiscal</h1>
+                                <h1>Auditoria Executiva e Diagnóstico Fiscal</h1>
                                 <p class="sub">Relatório analítico avançado de faturação, concentração de carteira e conferência de IVA.</p>
                             </div>
                             <div style="text-align: right;">
