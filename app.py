@@ -324,7 +324,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTORES DE PROCESSAMENTO COM CREDIBILIDADE ----------------
+# ---------------- MOTORES DE PROCESSAMENTO BLINDADOS ----------------
 def corrigir_texto(texto):
     if not texto:
         return ""
@@ -337,7 +337,10 @@ def corrigir_texto(texto):
 
 def processar_saft_xml(xml_bytes):
     root = ET.fromstring(xml_bytes)
-    namespace = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
+    ns_uri = ''
+    if '}' in root.tag:
+        ns_uri = root.tag.split('}')[0].strip('{')
+    namespace = {'ns': ns_uri} if ns_uri else {}
     prefix = 'ns:' if namespace else ''
 
     clientes = {}
@@ -350,16 +353,38 @@ def processar_saft_xml(xml_bytes):
     dados_faturas = []
     dados_iva = []
 
-    for invoice in root.findall(f'.//{prefix}Invoice', namespace):
-        doc_no = invoice.find(f'{prefix}InvoiceNo', namespace).text
-        doc_type = invoice.find(f'{prefix}InvoiceType', namespace).text
-        doc_date = invoice.find(f'{prefix}InvoiceDate', namespace).text
-        cust_id = invoice.find(f'{prefix}CustomerID', namespace).text
+    invoices = root.findall(f'.//{prefix}Invoice', namespace) if namespace else root.findall('.//Invoice')
+    if not invoices:
+        invoices = root.findall('.//{*}Invoice')
+
+    for invoice in invoices:
+        def get_text(elem, tag):
+            found = elem.find(f'{prefix}{tag}', namespace) if namespace else elem.find(tag)
+            if found is None or found.text is None:
+                for child in elem:
+                    if child.tag.endswith(tag):
+                        return child.text
+                return None
+            return found.text
+
+        doc_no = get_text(invoice, 'InvoiceNo') or "DOC-01"
+        doc_type = get_text(invoice, 'InvoiceType') or "FT"
+        doc_date = get_text(invoice, 'InvoiceDate') or "2026-01-01"
+        cust_id = get_text(invoice, 'CustomerID') or "GERAL"
         
-        totais = invoice.find(f'{prefix}DocumentTotals', namespace)
-        valor_bruto = float(totais.find(f'{prefix}GrossTotal', namespace).text)
-        valor_liquido = float(totais.find(f'{prefix}NetTotal', namespace).text) if totais.find(f'{prefix}NetTotal', namespace) is not None else valor_bruto
-        imposto_doc = float(totais.find(f'{prefix}TaxPayable', namespace).text) if totais.find(f'{prefix}TaxPayable', namespace) is not None else 0.0
+        totais = invoice.find(f'{prefix}DocumentTotals', namespace) if namespace else invoice.find('DocumentTotals')
+        if totais is not None:
+            gross_elem = totais.find(f'{prefix}GrossTotal', namespace) if namespace else totais.find('GrossTotal')
+            net_elem = totais.find(f'{prefix}NetTotal', namespace) if namespace else totais.find('NetTotal')
+            tax_elem = totais.find(f'{prefix}TaxPayable', namespace) if namespace else totais.find('TaxPayable')
+            
+            valor_bruto = float(gross_elem.text) if gross_elem is not None and gross_elem.text else 0.0
+            valor_liquido = float(net_elem.text) if net_elem is not None and net_elem.text else valor_bruto
+            imposto_doc = float(tax_elem.text) if tax_elem is not None and tax_elem.text else 0.0
+        else:
+            valor_bruto = 0.0
+            valor_liquido = 0.0
+            imposto_doc = 0.0
 
         if doc_type == 'NC':
             valor_bruto = -abs(valor_bruto)
@@ -369,25 +394,26 @@ def processar_saft_xml(xml_bytes):
         dados_faturas.append({
             'Documento': doc_no,
             'Tipo': doc_type,
-            'Data': doc_date,
+            'Data': doc_date[:10],
             'Cliente': clientes.get(cust_id, f"Cliente {cust_id}"),
             'ValorBruto': valor_bruto,
             'ValorLiquido': valor_liquido,
             'Imposto': imposto_doc
         })
 
-        for line in invoice.findall(f'.//{prefix}Line', namespace):
-            tax_elem = line.find(f'{prefix}Tax', namespace)
+        lines = invoice.findall(f'.//{prefix}Line', namespace) if namespace else invoice.findall('.//Line')
+        for line in lines:
+            tax_elem = line.find(f'{prefix}Tax', namespace) if namespace else line.find('Tax')
             if tax_elem is not None:
-                t_code = tax_elem.find(f'{prefix}TaxCode', namespace)
-                t_perc = tax_elem.find(f'{prefix}TaxPercentage', namespace)
-                t_amt = tax_elem.find(f'{prefix}TaxAmount', namespace)
+                t_code = tax_elem.find(f'{prefix}TaxCode', namespace) if namespace else tax_elem.find('TaxCode')
+                t_perc = tax_elem.find(f'{prefix}TaxPercentage', namespace) if namespace else tax_elem.find('TaxPercentage')
+                t_amt = tax_elem.find(f'{prefix}TaxAmount', namespace) if namespace else tax_elem.find('TaxAmount')
                 
                 tax_rate = float(t_perc.text) if t_perc is not None and t_perc.text else 0.0
                 tax_code = t_code.text if t_code is not None and t_code.text else "OUT"
                 
-                credit = line.find(f'{prefix}CreditAmount', namespace)
-                debit = line.find(f'{prefix}DebitAmount', namespace)
+                credit = line.find(f'{prefix}CreditAmount', namespace) if namespace else line.find('CreditAmount')
+                debit = line.find(f'{prefix}DebitAmount', namespace) if namespace else line.find('DebitAmount')
                 base = float(credit.text) if credit is not None and credit.text else (float(debit.text) if debit is not None and debit.text else 0.0)
                 
                 if doc_type == 'NC':
@@ -404,7 +430,12 @@ def processar_saft_xml(xml_bytes):
                     'ValorIVA': tax_val
                 })
 
-    return pd.DataFrame(dados_faturas), pd.DataFrame(dados_iva)
+    df_fat = pd.DataFrame(dados_faturas)
+    if df_fat.empty:
+        raise ValueError("O ficheiro SAF-T XML não contém faturas ou registos de vendas elegíveis para análise.")
+        
+    df_tax = pd.DataFrame(dados_iva)
+    return df_fat, df_tax
 
 def processar_documento_comercial(file_bytes, filename):
     filename_lower = filename.lower()
@@ -451,7 +482,6 @@ def processar_documento_comercial(file_bytes, filename):
 
             df_raw = df_raw.rename(columns=col_map)
 
-            # Blindagem: se faltar alguma coluna essencial, criar por omissão com valores seguros
             if 'Cliente' not in df_raw.columns:
                 df_raw['Cliente'] = 'Cliente Geral'
             if 'Documento' not in df_raw.columns:
