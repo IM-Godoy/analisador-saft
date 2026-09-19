@@ -16,7 +16,6 @@ st.set_page_config(
 # ---------------- OCULTAR TOTALMENTE A BARRA E ÍCONES SUPERIORES ----------------
 st.markdown("""
     <style>
-    /* Oculta por completo a barra de ferramentas e ícones do Streamlit no topo */
     [data-testid="stHeader"] {
         display: none !important;
         visibility: hidden !important;
@@ -53,7 +52,6 @@ def injetar_fundo_tunel_suave():
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // 1. ANÉIS POLIGONAIS DA ESPIRAL
             const ringCount = 44;
             const rings = [];
             const sides = 8;
@@ -79,7 +77,6 @@ def injetar_fundo_tunel_suave():
                 rings.push(ring);
             }
 
-            // 2. VÓRTICE DE PARTÍCULAS ULTRA-LENTO
             const pCount = 950;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
@@ -105,7 +102,6 @@ def injetar_fundo_tunel_suave():
             const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            // 3. ANIMAÇÃO AMBIENTE LENTA E MAJESTOSA
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
@@ -157,7 +153,6 @@ injetar_fundo_tunel_suave()
 # ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
     <style>
-    /* Transparência Global */
     html, body, .stApp, [data-testid="stAppViewContainer"], .main {
         background: transparent !important;
     }
@@ -668,61 +663,108 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # TAB 4: PLANOS & RELATÓRIO
+        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (DARK MODE)
         with tab_plano:
-            st.markdown("#### 📄 Relatório Executivo do SAF-T Carregado")
+            st.markdown("#### 📄 Relatório Executivo Avançado (Pronto a Descarregar)")
+            st.caption("O relatório exportado foi reformulado num design corporativo Dark Mode de alto padrão, contendo todas as métricas detalhadas, matriz de risco e top de clientes.")
             
+            # Geração das linhas detalhadas para o relatório rico
             html_linhas = ""
-            for _, row in df_clientes.head(15).iterrows():
+            for _, row in df_clientes.head(20).iterrows():
                 p_cli = (row['ValorBruto'] / fat_liquida * 100) if fat_liquida > 0 else 0
                 html_linhas += f"""
                 <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">{row['Cliente']}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">{row['ValorBruto']:,.2f} €</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">{p_cli:.1f}%</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">{row['Cliente']}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; font-weight: 600; color: #00D9D9;">{row['ValorBruto']:,.2f} €</td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right;">{p_cli:.1f}%</td>
                 </tr>
                 """
+
+            # Geração do sumário de IVA para o relatório
+            html_iva_linhas = ""
+            if not df_tax.empty:
+                df_tax_resumo = df_tax.groupby(['TaxCode', 'TaxRate'])[['Base', 'ValorIVA']].sum().reset_index()
+                for _, row in df_tax_resumo.iterrows():
+                    html_iva_linhas += f"""
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">{row['TaxCode']} ({row['TaxRate']:.1f}%)</td>
+                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right;">{row['Base']:,.2f} €</td>
+                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; color: #00D9D9;">{row['ValorIVA']:,.2f} €</td>
+                    </tr>
+                    """
 
             html_doc = f"""<!DOCTYPE html>
             <html lang="pt">
             <head>
                 <meta charset="UTF-8">
-                <title>Relatório Executivo Mensal</title>
+                <title>Relatório Executivo de Auditoria SAF-T</title>
                 <style>
-                    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; padding: 30px; }}
-                    .card {{ background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 800px; margin: 0 auto; }}
-                    .kpis {{ display: flex; justify-content: space-between; margin: 20px 0; }}
-                    .kpi {{ background: #f1f5f9; padding: 15px; border-radius: 6px; width: 30%; text-align: center; }}
-                    .kpi h4 {{ margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; }}
-                    .kpi p {{ margin: 8px 0 0 0; font-size: 18px; font-weight: bold; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }}
-                    th {{ background: #f8fafc; padding: 8px; text-align: left; border-bottom: 2px solid #cbd5e1; }}
+                    body {{ font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #030609; color: #f8fafc; padding: 40px; }}
+                    .container {{ max-width: 900px; margin: 0 auto; background: rgba(8, 14, 20, 0.95); border: 1px solid rgba(0, 217, 217, 0.3); border-radius: 16px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }}
+                    .header-top {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 217, 217, 0.2); padding-bottom: 20px; margin-bottom: 30px; }}
+                    .badge {{ background: rgba(0, 217, 217, 0.15); color: #00D9D9; border: 1px solid rgba(0, 217, 217, 0.4); padding: 4px 12px; font-size: 11px; font-weight: bold; border-radius: 99px; text-transform: uppercase; }}
+                    h1 {{ margin: 10px 0 0 0; font-size: 26px; color: #ffffff; }}
+                    p.sub {{ color: #94a3b8; font-size: 13px; margin-top: 4px; }}
+                    .kpis-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }}
+                    .kpi-card {{ background: rgba(4, 8, 12, 0.8); border: 1px solid rgba(0, 217, 217, 0.2); border-radius: 12px; padding: 18px; text-align: center; }}
+                    .kpi-card h4 {{ margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }}
+                    .kpi-card p {{ margin: 8px 0 0 0; font-size: 20px; font-weight: bold; color: #00D9D9; }}
+                    .section-title {{ font-size: 16px; font-weight: 700; color: #ffffff; margin: 30px 0 15px 0; border-left: 3px solid #00D9D9; padding-left: 10px; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }}
+                    th {{ background: rgba(0, 217, 217, 0.1); color: #00D9D9; padding: 10px; text-align: left; border-bottom: 2px solid rgba(0, 217, 217, 0.3); font-weight: 600; }}
+                    .footer {{ margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; text-align: center; font-size: 11px; color: #64748b; }}
                 </style>
             </head>
             <body>
-                <div class="card">
-                    <h2>Relatório Executivo de Gestão & Faturação</h2>
-                    <p style="color: #64748b; font-size: 13px;">Auditoria Automatizada via SAF-T</p>
-                    <div class="kpis">
-                        <div class="kpi"><h4>Faturação Líquida</h4><p>{fat_liquida:,.2f} €</p></div>
-                        <div class="kpi"><h4>Ticket Médio</h4><p>{ticket_medio:,.2f} €</p></div>
-                        <div class="kpi"><h4>Risco Cliente Top</h4><p>{concentracao_top1:.1f}%</p></div>
+                <div class="container">
+                    <div class="header-top">
+                        <div>
+                            <span class="badge">SAF-T Intelligence Pro • Relatório Oficial</span>
+                            <h1>Auditoria Executiva e Diagnóstico Fiscal</h1>
+                            <p class="sub">Análise automatizada de volume de negócios, concentração de clientes e conferência de IVA.</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 12px; color: #94a3b8; margin: 0;"><b>Moeda:</b> EUR</p>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;"><b>Processamento:</b> 100% In-Memory (RGPD)</p>
+                        </div>
                     </div>
-                    <h3>Top 15 Clientes da Carteira</h3>
+
+                    <div class="kpis-grid">
+                        <div class="kpi-card"><h4>Faturação Líquida</h4><p>{fat_liquida:,.2f} €</p></div>
+                        <div class="kpi-card"><h4>Ticket Médio</h4><p>{ticket_medio:,.2f} €</p></div>
+                        <div class="kpi-card"><h4>Risco Cliente Top 1</h4><p>{concentracao_top1:.1f}%</p></div>
+                        <div class="kpi-card"><h4>Volume Bruto</h4><p>{fat_bruta:,.2f} €</p></div>
+                        <div class="kpi-card"><h4>Total Devoluções (NC)</h4><p>{total_nc:,.2f} € ({taxa_nc:.1f}%)</p></div>
+                        <div class="kpi-card"><h4>Total IVA Liquidado</h4><p>{total_iva:,.2f} €</p></div>
+                    </div>
+
+                    <div class="section-title">📊 Top Clientes da Carteira (Matriz de Concentração)</div>
                     <table>
                         <thead>
-                            <tr><th>Cliente</th><th style="text-align: right;">Total (€)</th><th style="text-align: right;">% Receita</th></tr>
+                            <tr><th>Designação do Cliente</th><th style="text-align: right;">Volume Total (€)</th><th style="text-align: right;">Peso Relativo (%)</th></tr>
                         </thead>
                         <tbody>{html_linhas}</tbody>
                     </table>
+
+                    <div class="section-title">⚖️ Apuramento e Conferência de IVA por Escalão</div>
+                    <table>
+                        <thead>
+                            <tr><th>Código / Taxa de Imposto</th><th style="text-align: right;">Base Tributável (€)</th><th style="text-align: right;">IVA Liquidado (€)</th></tr>
+                        </thead>
+                        <tbody>{html_iva_linhas}</tbody>
+                    </table>
+
+                    <div class="footer">
+                        <p>Gerado automaticamente pela plataforma SAF-T Intelligence Pro • Documento confidencial para análise de gestão e apoio fiscal.</p>
+                    </div>
                 </div>
             </body>
             </html>"""
 
             st.download_button(
-                label="📥 Descarregar Relatório Executivo (HTML/PDF)",
+                label="📥 Descarregar Relatório Executivo Avançado (Dark Mode HTML)",
                 data=html_doc,
-                file_name="relatorio_saft_executivo.html",
+                file_name="relatorio_saft_executivo_avancado.html",
                 mime="text/html"
             )
 
