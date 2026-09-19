@@ -12,14 +12,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilo executivo e moderno
+# ---------------- ESTILOS VISUAIS PREMIUM (DARK SAAS) ----------------
 st.markdown("""
     <style>
+    /* Estilo Geral de Cabeçalho */
     .main-header {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border: 1px solid #334155;
         border-radius: 14px;
-        padding: 24px;
+        padding: 26px;
         margin-bottom: 25px;
     }
     .badge-pill {
@@ -35,8 +36,9 @@ st.markdown("""
     .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
     .badge-green { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
     .badge-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
 
+    /* Cartões de Métricas */
     div[data-testid="stMetric"] {
         background-color: #1e293b;
         border: 1px solid #334155;
@@ -54,12 +56,65 @@ st.markdown("""
         font-size: 22px !important;
         font-weight: 700;
     }
+
+    /* Cartões de Funcionalidade da Hero */
     .hero-card {
         background: #1e293b;
         border: 1px solid #334155;
         border-radius: 12px;
-        padding: 20px;
+        padding: 22px;
         height: 100%;
+    }
+
+    /* Cartões de Preço / Pricing Cards */
+    .pricing-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 26px 22px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .pricing-card-featured {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        border: 2px solid #38bdf8;
+        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+        border-radius: 14px;
+        padding: 26px 22px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .pricing-price {
+        font-size: 32px;
+        font-weight: 800;
+        color: #f8fafc;
+        margin: 12px 0 4px 0;
+    }
+    .pricing-sub {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 20px;
+    }
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 24px 0;
+        font-size: 14px;
+        color: #cbd5e1;
+    }
+    .feature-list li {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .check-icon {
+        color: #22c55e;
+        font-weight: bold;
+        margin-right: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -80,7 +135,6 @@ def processar_saft_completo(xml_bytes):
     namespace = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
     prefix = 'ns:' if namespace else ''
 
-    # Mapa de Clientes
     clientes = {}
     for customer in root.findall(f'.//{prefix}Customer', namespace):
         cust_id = customer.find(f'{prefix}CustomerID', namespace)
@@ -88,7 +142,6 @@ def processar_saft_completo(xml_bytes):
         if cust_id is not None and cust_name is not None:
             clientes[cust_id.text] = corrigir_texto(cust_name.text)
 
-    # Documentos e Linhas
     dados_faturas = []
     dados_iva = []
 
@@ -118,7 +171,6 @@ def processar_saft_completo(xml_bytes):
             'Imposto': imposto_doc
         })
 
-        # Auditoria de IVA por Linhas (se disponível)
         for line in invoice.findall(f'.//{prefix}Line', namespace):
             tax_elem = line.find(f'{prefix}Tax', namespace)
             if tax_elem is not None:
@@ -147,14 +199,85 @@ def processar_saft_completo(xml_bytes):
                     'ValorIVA': tax_val
                 })
 
-    df_fat = pd.DataFrame(dados_faturas)
-    df_tax = pd.DataFrame(dados_iva)
-    return df_fat, df_tax
+    return pd.DataFrame(dados_faturas), pd.DataFrame(dados_iva)
+
+# ---------------- FUNÇÃO PARA EXIBIR A TABELA DE PREÇOS MODERNA ----------------
+def exibir_tabela_precos():
+    st.markdown("### 💎 Planos & Preços Transparentes")
+    st.markdown("Escolha a opção ideal para a sua empresa ou para a carteira de clientes do seu gabinete de contabilidade.")
+    
+    col_p1, col_p2, col_p3 = st.columns(3)
+
+    # Plano 1: Grátis
+    with col_p1:
+        st.markdown("""
+        <div class="pricing-card">
+            <div>
+                <span class="badge-pill badge-blue">Para Testes</span>
+                <h3 style="margin: 0; color: #f8fafc;">Diagnóstico Pontual</h3>
+                <div class="pricing-price">0 €</div>
+                <div class="pricing-sub">Gratuito para sempre</div>
+                <ul class="feature-list">
+                    <li><span class="check-icon">✓</span> Leitura instantânea de 1 SAF-T</li>
+                    <li><span class="check-icon">✓</span> KPIs de Faturação Líquida e Ticket Médio</li>
+                    <li><span class="check-icon">✓</span> Detetor básico de Concentração Top 1</li>
+                    <li><span class="check-icon">✓</span> Relatório executivo básico em ecrã</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Plano Atual (Carregue SAF-T)", disabled=True, key="btn_free")
+
+    # Plano 2: PME Gestão
+    with col_p2:
+        st.markdown("""
+        <div class="pricing-card">
+            <div>
+                <span class="badge-pill badge-green">Para Empresas</span>
+                <h3 style="margin: 0; color: #f8fafc;">PME Gestão</h3>
+                <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
+                <div class="pricing-sub">Acompanhamento contínuo da empresa</div>
+                <ul class="feature-list">
+                    <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
+                    <li><span class="check-icon">✓</span> Análise Mensal Automatizada por E-mail</li>
+                    <li><span class="check-icon">✓</span> <b>Relatório Homólogo</b> (Mês vs Mês Anterior)</li>
+                    <li><span class="check-icon">✓</span> Detetor de Perda de Clientes (Churn)</li>
+                    <li><span class="check-icon">✓</span> Alertas de Risco de Tesouraria no WhatsApp</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        msg_pme = "Olá! Gostaria de subscrever o Plano PME Gestão (29€/mês) para a minha empresa."
+        url_pme = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_pme)}"
+        st.link_button("🚀 Subscrever Plano PME (29€)", url_pme, use_container_width=True)
+
+    # Plano 3: Gabinete Pro (Destaque)
+    with col_p3:
+        st.markdown("""
+        <div class="pricing-card-featured">
+            <div>
+                <span class="badge-pill badge-purple">⭐ Mais Escolhido</span>
+                <h3 style="margin: 0; color: #f8fafc;">Gabinete Pro</h3>
+                <div class="pricing-price">79 € <span style="font-size: 15px; color: #38bdf8; font-weight: normal;">/mês</span></div>
+                <div class="pricing-sub">Para Gabinetes de Contabilidade & TOCs</div>
+                <ul class="feature-list">
+                    <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b> incluídas</li>
+                    <li><span class="check-icon">✓</span> <b>White-Label:</b> Relatórios com o logótipo do gabinete</li>
+                    <li><span class="check-icon">✓</span> Mapa de Auditoria de IVA para apoio fiscal</li>
+                    <li><span class="check-icon">✓</span> Exportação executiva em 1 clique para enviar aos clientes</li>
+                    <li><span class="check-icon">✓</span> Suporte prioritário dedicado por WhatsApp</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        msg_gab = "Olá! Gostaria de ativar o Plano Gabinete Pro (79€/mês) para a carteira de clientes do meu gabinete."
+        url_gab = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_gab)}"
+        st.link_button("⭐ Aderir ao Gabinete Pro (79€)", url_gab, type="primary", use_container_width=True)
 
 # ---------------- CABEÇALHO PRINCIPAL ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-blue">SAF-T Executive Analytics v2.0</span>
+    <span class="badge-pill badge-blue">SAF-T Executive Analytics v2.5</span>
     <h1 style="margin: 0; font-size: 28px; color: #f8fafc;">⚡ Plataforma de Inteligência e Auditoria SAF-T</h1>
     <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 15px;">
         Transforme ficheiros fiscais mensais num diagnóstico executivo de faturação, dependência de clientes e IVA.
@@ -164,7 +287,7 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: AINDA NÃO CARREGOU FICHEIRO (HERO SECTION) ----------------
+# ---------------- CASO 1: PÁGINA INICIAL (ANTES DO UPLOAD) ----------------
 if ficheiro_saft is None:
     st.markdown("### Porquê analisar o SAF-T com a nossa plataforma?")
     col_h1, col_h2, col_h3 = st.columns(3)
@@ -173,9 +296,9 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="hero-card">
             <span class="badge-pill badge-green">Segurança Máxima</span>
-            <h3 style="margin-top: 5px;">🔒 100% Confidencial</h3>
+            <h3 style="margin-top: 5px; color: #f8fafc;">🔒 100% Confidencial</h3>
             <p style="color: #94a3b8; font-size: 14px;">
-                Os ficheiros são lidos estritamente na memória volátil do navegador. Nenhum dado de clientes ou valores é armazenado em bases de dados externas.
+                Os ficheiros são processados na memória volátil do navegador. Nenhum dado financeiro ou fiscal é armazenado em bases de dados externas.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -184,7 +307,7 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="hero-card">
             <span class="badge-pill badge-blue">Gestão Estratégica</span>
-            <h3 style="margin-top: 5px;">📊 Curva ABC & Risco 80/20</h3>
+            <h3 style="margin-top: 5px; color: #f8fafc;">📊 Curva ABC & Risco 80/20</h3>
             <p style="color: #94a3b8; font-size: 14px;">
                 Descubra instantaneamente quais os clientes críticos que asseguram 80% do fluxo de caixa e identifique a concentração de risco comercial.
             </p>
@@ -195,14 +318,16 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="hero-card">
             <span class="badge-pill badge-amber">Conferência Fiscal</span>
-            <h3 style="margin-top: 5px;">⚖️ Auditoria de IVA</h3>
+            <h3 style="margin-top: 5px; color: #f8fafc;">⚖️ Auditoria de IVA</h3>
             <p style="color: #94a3b8; font-size: 14px;">
                 Resumo instantâneo de faturas emitidas vs. notas de crédito, com desdobramento por taxas normal (23%), intermédia, reduzida e isenções.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.info("👆 Selecione um ficheiro SAF-T (.xml) acima para ver a demonstração instantânea em menos de 5 segundos.")
+    st.markdown("---")
+    # TABELA DE PREÇOS NA HOME PAGE
+    exibir_tabela_precos()
 
 # ---------------- CASO 2: FICHEIRO CARREGADO COM SUCESSO ----------------
 else:
@@ -234,7 +359,7 @@ else:
             "📈 Visão Geral Executiva",
             "👥 Curva ABC & Concentração",
             "⚖️ Auditoria de IVA & Fiscal",
-            "📑 Relatório & Subscrição"
+            "💎 Planos & Relatório"
         ])
 
         # ---------------- TAB 1: VISÃO GERAL ----------------
@@ -252,7 +377,6 @@ else:
             c7.metric("Taxa de Devoluções (% NC)", f"{taxa_nc:.2f}%")
             c8.metric("Total IVA Liquidado", f"{total_iva:,.2f} €")
 
-            # Badges de Diagnóstico Executivo
             st.markdown("---")
             st.markdown("#### Diagnóstico Rápido de Risco")
             d_col1, d_col2 = st.columns(2)
@@ -270,7 +394,6 @@ else:
                 else:
                     st.success(f"✅ **Operação Eficiente:** Taxa de notas de crédito reduzida ({taxa_nc:.1f}%), dentro dos parâmetros de excelência.")
 
-            # Gráfico Temporal da Faturação
             st.markdown("---")
             st.markdown("#### Ritmo Diário de Vendas no Período")
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
@@ -298,7 +421,6 @@ else:
 
             df_abc['Categoria ABC'] = df_abc['% Acumulada'].apply(classificar_pareto)
 
-            # Contadores ABC
             total_a = len(df_abc[df_abc['Categoria ABC'].str.contains('Classe A')])
             total_b = len(df_abc[df_abc['Categoria ABC'].str.contains('Classe B')])
             total_c = len(df_abc[df_abc['Categoria ABC'].str.contains('Classe C')])
@@ -342,11 +464,10 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # ---------------- TAB 4: RELATÓRIO & SUBSCRIÇÃO ----------------
+        # ---------------- TAB 4: PLANOS & RELATÓRIO ----------------
         with tab_plano:
-            st.markdown("#### Exportação e Planos Mensais de Acompanhamento")
+            st.markdown("#### 📄 Relatório Executivo do SAF-T Carregado")
             
-            # Gerar Relatório HTML Aprimorado
             html_linhas = ""
             for _, row in df_clientes.head(15).iterrows():
                 p_cli = (row['ValorBruto'] / fat_liquida * 100) if fat_liquida > 0 else 0
@@ -395,27 +516,29 @@ else:
             </html>"""
 
             st.download_button(
-                label="📄 Descarregar Relatório Executivo Completo (HTML/PDF)",
+                label="📥 Descarregar Relatório Executivo (HTML/PDF)",
                 data=html_doc,
                 file_name="relatorio_saft_executivo.html",
                 mime="text/html"
             )
 
             st.markdown("---")
-            st.subheader("💼 Planos Mensais para Empresas e Gabinetes")
-            st.write("Receba relatórios comparativos homólogos todos os meses ou integre este sistema na carteira de clientes do seu gabinete de contabilidade com a sua própria marca.")
+            # TABELA DE PREÇOS DENTRO DO SEPARADOR
+            exibir_tabela_precos()
 
+            st.markdown("---")
+            st.subheader("📬 Fale Connosco ou Peça uma Demonstração Personalizada")
+            
             col_form, col_whats = st.columns([1.2, 1])
-
             MEU_EMAIL_NOTIFICACAO = "gestao.saft.pt@gmail.com"
 
             with col_form:
                 with st.form("form_contacto_v2"):
-                    st.markdown("**Pedir proposta ou acesso de teste:**")
+                    st.markdown("**Pedir contacto ou proposta por e-mail:**")
                     nome = st.text_input("O seu Nome")
                     contacto = st.text_input("E-mail ou Telemóvel")
-                    tipo_perfil = st.selectbox("Perfil:", ["Empresa / Gestor (29 €/mês)", "Gabinete de Contabilidade (79 €/mês)"])
-                    submetido = st.form_submit_button("Submeter Pedido")
+                    tipo_perfil = st.selectbox("Plano de Interesse:", ["Plano PME Gestão (29 €/mês)", "Plano Gabinete Pro (79 €/mês)", "Demonstração para Gabinete"])
+                    submetido = st.form_submit_button("Pedir Informações")
 
                     if submetido:
                         if nome and contacto:
@@ -454,13 +577,13 @@ else:
 
             with col_whats:
                 st.markdown("**Contacto Imediato por WhatsApp:**")
-                st.write("Tire dúvidas instantâneas ou agende uma demonstração prática:")
+                st.write("Fale diretamente connosco para tirar dúvidas ou solicitar integração para a sua carteira:")
                 
                 numero_whatsapp = "351935009099" 
-                mensagem_padrao = "Olá! Estive a testar a plataforma SAF-T Intelligence Pro e gostaria de saber mais informações sobre os planos mensais."
-                url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(mensagem_padrao)}"
+                msg_whats_geral = "Olá! Estive a testar a plataforma SAF-T Intelligence Pro e gostaria de tirar algumas dúvidas sobre os planos."
+                url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(msg_whats_geral)}"
                 
-                st.link_button("💬 Falar pelo WhatsApp", url_whatsapp, type="primary")
+                st.link_button("💬 Abrir Conversa no WhatsApp", url_whatsapp, type="primary", use_container_width=True)
 
     except Exception as e:
         st.error(f"Erro ao processar ficheiro SAF-T: {e}")
