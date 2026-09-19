@@ -52,7 +52,6 @@ def injetar_fundo_tunel_lento():
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            # Anéis estruturais do túnel
             const ringCount = 50;
             const rings = [];
             const sides = 6;
@@ -78,7 +77,6 @@ def injetar_fundo_tunel_lento():
                 rings.push(ring);
             }
 
-            # Partículas de fundo com movimento subtil e lento
             const pCount = 1200;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
@@ -90,7 +88,7 @@ def injetar_fundo_tunel_lento():
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
                 pPos[i+2] = -Math.random() * 75;
-                pSpeed[i/3] = 0.003 + Math.random() * 0.004; # Velocidade reduzida
+                pSpeed[i/3] = 0.003 + Math.random() * 0.004;
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
@@ -107,11 +105,11 @@ def injetar_fundo_tunel_lento():
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.0003; # Incremento temporal muito baixo para garantir suavidade e lentidão
+                time += 0.0003;
 
                 for (let i = 0; i < ringCount; i++) {
                     const r = rings[i];
-                    r.position.z += 0.004; # Avanço lento dos anéis
+                    r.position.z += 0.004;
                     if (r.position.z > 5.0) {
                         r.position.z = -ringCount * 1.5 + 5.0;
                     }
@@ -150,12 +148,9 @@ def injetar_fundo_tunel_lento():
     """
     components.html(tunel_html, height=0)
 
-# ---------------- ESTILOS VISUAIS: CORPORATIVO E ESTÁTICO APÓS UPLOAD ----------------
+# ---------------- ESTILOS VISUAIS GLOBAIS ----------------
 st.markdown("""
     <style>
-    html, body, .stApp, [data-testid="stAppViewContainer"], .main {
-        background-color: #030609 !important;
-    }
     body {
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -484,9 +479,17 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (COM TÚNEL LENTO) ----------------
+# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (FUNDO TRANSPARENTE + TÚNEL 3D) ----------------
 if ficheiro_saft is None:
-    # Ativa o túnel lento e sóbrio exclusivamente na página inicial
+    # Torna o fundo transparente para o túnel 3D imersivo aparecer
+    st.markdown("""
+        <style>
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main {
+            background: transparent !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     injetar_fundo_tunel_lento()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -526,8 +529,17 @@ if ficheiro_saft is None:
         </div>
         """, unsafe_allow_html=True)
 
-# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO (FUNDO ESTÁTICO LIMPO) ----------------
+# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO (FUNDO ESTÁTICO E SÓLIDO) ----------------
 else:
+    # Torna o fundo sólido e limpo para focar nos dados e gráficos
+    st.markdown("""
+        <style>
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main {
+            background-color: #030609 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     try:
         bytes_data = ficheiro_saft.read()
         df, df_tax = processar_saft_completo(bytes_data)
