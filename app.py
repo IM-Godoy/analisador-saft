@@ -13,265 +13,121 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- MOTOR WEBGL: PALETA MODERNA, SOFISTICADA E NÃO-CHAMATIVA ----------------
-def injetar_fundo_webgl_moderno():
-    webgl_html = """
+# ---------------- MOTOR 3D: TÚNEL ESPIRAL ULTRA-SUAVE (FUNDO GLOBAL) ----------------
+def injetar_fundo_tunel_suave():
+    tunel_html = """
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #020406; }
+            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #030609; }
             canvas { width: 100%; height: 100%; display: block; }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     </head>
     <body>
-        <canvas id="canvas-3d"></canvas>
+        <canvas id="bg-canvas"></canvas>
         <script>
-            const canvas = document.getElementById('canvas-3d');
+            const canvas = document.getElementById('bg-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x020406, 0.026);
+            scene.fog = new THREE.FogExp2(0x030609, 0.04);
 
-            const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 1.4, 7.8);
-            camera.rotation.x = -0.12;
+            const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 5.0;
 
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            const planeW = 44;
-            const planeH = 32;
-            const segX = 180;
-            const segY = 130;
+            // 1. ANÉIS POLIGONAIS DA ESPIRAL
+            const ringCount = 44;
+            const rings = [];
+            const sides = 8;
+            const radius = 3.6;
+            const ringPts = [];
 
-            // 1. SHADER DO TERRENO COM PALETA MODERNA E DISCRETA (ANTRACITE & PRATA)
-            const terrainGeo = new THREE.PlaneGeometry(planeW, planeH, segX, segY);
+            for (let s = 0; s <= sides; s++) {
+                const a = (s / sides) * Math.PI * 2;
+                ringPts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0));
+            }
+            const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
 
-            const terrainVertex = `
-                uniform float uTime;
-                uniform vec2 uMouse;
-                uniform float uBulgeRadius;
-                uniform float uBulgeStrength;
+            for (let i = 0; i < ringCount; i++) {
+                const isBright = (i % 2 === 0);
+                const ringMat = new THREE.LineBasicMaterial({
+                    color: isBright ? 0x00D9D9 : 0x008b8b,
+                    transparent: true,
+                    opacity: isBright ? 0.30 : 0.15
+                });
+                const ring = new THREE.Line(ringGeo, ringMat);
+                ring.position.z = -i * 1.5;
+                scene.add(ring);
+                rings.push(ring);
+            }
 
-                varying vec2 vUv;
-                varying float vElevation;
-                varying float vDist;
-                varying vec3 vWorldPos;
+            // 2. VÓRTICE DE PARTÍCULAS ULTRA-LENTO
+            const pCount = 950;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            const pSpeed = new Float32Array(pCount);
 
-                float getDunes(vec2 p, float t) {
-                    float h = sin(p.x * 0.22 + t * 0.3) * cos(p.y * 0.25 + t * 0.2) * 1.4;
-                    h += sin(p.x * 0.48 - t * 0.15 + p.y * 0.38) * 0.65;
-                    h += cos(p.x * 0.12 + p.y * 0.15) * 0.8;
-                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.55;
-                    return h;
-                }
+            for (let i = 0; i < pCount * 3; i += 3) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = 1.9 + Math.random() * 4.8;
+                pPos[i] = Math.cos(angle) * r;
+                pPos[i+1] = Math.sin(angle) * r;
+                pPos[i+2] = -Math.random() * 65;
+                // Velocidade reduzida para deslize ambiente mínimo
+                pSpeed[i/3] = 0.005 + Math.random() * 0.008;
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
-                void main() {
-                    vUv = uv;
-                    vec3 pos = position;
-
-                    float h = getDunes(pos.xy, uTime);
-
-                    float d = distance(pos.xy, uMouse);
-                    vDist = d;
-                    float bulge = smoothstep(uBulgeRadius, 0.0, d);
-                    bulge = pow(bulge, 1.8) * uBulgeStrength;
-
-                    pos.z += h + bulge;
-                    vElevation = pos.z;
-
-                    vec4 wp = modelMatrix * vec4(pos, 1.0);
-                    vWorldPos = wp.xyz;
-                    gl_Position = projectionMatrix * viewMatrix * wp;
-                }
-            `;
-
-            const terrainFragment = `
-                uniform float uTime;
-                varying vec2 vUv;
-                varying float vElevation;
-                varying float vDist;
-                varying vec3 vWorldPos;
-
-                // Paleta corporativa moderna: tons de carvão, azul aço e prata subtil
-                vec3 modernPalette(float t) {
-                    vec3 a = vec3(0.08, 0.12, 0.16);
-                    vec3 b = vec3(0.12, 0.18, 0.22);
-                    vec3 c = vec3(0.8, 0.8, 0.8);
-                    vec3 d = vec3(0.1, 0.2, 0.4);
-                    return a + b * cos(6.28318 * (c * t + d));
-                }
-
-                void main() {
-                    vec3 darkBase = vec3(0.015, 0.022, 0.03);
-                    vec3 deepValley = vec3(0.005, 0.008, 0.012);
-                    float hf = smoothstep(-1.5, 2.5, vElevation);
-                    vec3 col = mix(deepValley, darkBase, hf);
-
-                    // Efeito iridescente corporativo muito suave no vale central
-                    float trough = smoothstep(5.2, 0.0, abs(vWorldPos.x));
-                    float pt = vWorldPos.y * 0.1 + vElevation * 0.3 + sin(uTime * 0.25) * 0.15;
-                    vec3 subtleSheen = modernPalette(pt);
-                    col = mix(col, subtleSheen * 0.5, trough * 0.45);
-
-                    // Suave iluminação sob o cursor
-                    float mouseLight = smoothstep(3.8, 0.0, vDist);
-                    col += vec3(0.04, 0.12, 0.15) * mouseLight;
-
-                    gl_FragColor = vec4(col, 0.92);
-                }
-            `;
-
-            const terrainMat = new THREE.ShaderMaterial({
-                vertexShader: terrainVertex,
-                fragmentShader: terrainFragment,
-                uniforms: {
-                    uTime: { value: 0 },
-                    uMouse: { value: new THREE.Vector2(-100, -100) },
-                    uBulgeRadius: { value: 5.2 },
-                    uBulgeStrength: { value: 2.6 }
-                },
+            const pMat = new THREE.PointsMaterial({
+                color: 0x00D9D9,
+                size: 0.040,
                 transparent: true,
-                side: THREE.DoubleSide
-            });
-
-            const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-            terrain.rotation.x = -Math.PI / 2.38;
-            terrain.position.y = -1.6;
-            scene.add(terrain);
-
-            // 2. SHADER DAS PARTÍCULAS (PRATA ESPACIAL & TURQUESA PASTEL DESATURADO)
-            const particlesGeo = new THREE.PlaneGeometry(planeW, planeH, 160, 120);
-
-            const particlesVertex = `
-                uniform float uTime;
-                uniform vec2 uMouse;
-                uniform float uBulgeRadius;
-                uniform float uBulgeStrength;
-
-                varying float vElevation;
-                varying float vDist;
-
-                float getDunes(vec2 p, float t) {
-                    float h = sin(p.x * 0.22 + t * 0.3) * cos(p.y * 0.25 + t * 0.2) * 1.4;
-                    h += sin(p.x * 0.48 - t * 0.15 + p.y * 0.38) * 0.65;
-                    h += cos(p.x * 0.12 + p.y * 0.15) * 0.8;
-                    h -= smoothstep(5.5, 0.0, abs(p.x)) * 0.55;
-                    return h;
-                }
-
-                void main() {
-                    vec3 pos = position;
-                    float h = getDunes(pos.xy, uTime);
-
-                    float d = distance(pos.xy, uMouse);
-                    vDist = d;
-                    float bulge = smoothstep(uBulgeRadius, 0.0, d);
-                    bulge = pow(bulge, 1.8) * uBulgeStrength;
-
-                    pos.z += h + bulge + 0.14;
-                    vElevation = pos.z;
-
-                    vec4 mvp = modelViewMatrix * vec4(pos, 1.0);
-                    float sizeBoost = smoothstep(-0.5, 2.2, pos.z);
-                    gl_PointSize = (20.0 / -mvp.z) * (0.8 + sizeBoost * 1.2 + bulge * 0.7);
-                    gl_Position = projectionMatrix * mvp;
-                }
-            `;
-
-            const particlesFragment = `
-                varying float vElevation;
-                varying float vDist;
-
-                void main() {
-                    float dist = length(gl_PointCoord - vec2(0.5));
-                    if (dist > 0.5) discard;
-                    float alpha = smoothstep(0.5, 0.08, dist);
-
-                    // Tons modernos e elegantes: prata, aço e ciano desaturado
-                    vec3 silver = vec3(0.65, 0.72, 0.78);
-                    vec3 steelBlue = vec3(0.25, 0.45, 0.58);
-                    vec3 mutedCyan = vec3(0.08, 0.52, 0.55);
-
-                    float hFactor = smoothstep(0.0, 2.4, vElevation);
-                    vec3 col = mix(mutedCyan, mix(steelBlue, silver, hFactor), hFactor);
-
-                    float hoverSpark = smoothstep(3.2, 0.0, vDist);
-                    col += vec3(0.15, 0.3, 0.35) * hoverSpark;
-
-                    gl_FragColor = vec4(col, alpha * 0.75);
-                }
-            `;
-
-            const particlesMat = new THREE.ShaderMaterial({
-                vertexShader: particlesVertex,
-                fragmentShader: particlesFragment,
-                uniforms: {
-                    uTime: { value: 0 },
-                    uMouse: { value: new THREE.Vector2(-100, -100) },
-                    uBulgeRadius: { value: 5.2 },
-                    uBulgeStrength: { value: 2.6 }
-                },
-                transparent: true,
-                depthWrite: false,
+                opacity: 0.65,
                 blending: THREE.AdditiveBlending
             });
-
-            const particles = new THREE.Points(particlesGeo, particlesMat);
-            particles.rotation.x = -Math.PI / 2.38;
-            particles.position.y = -1.6;
+            const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            // 3. RAYCASTING PARA O RATO
-            const raycaster = new THREE.Raycaster();
-            const mouseScreen = new THREE.Vector2(-10, -10);
-            const targetPos = new THREE.Vector2(-100, -100);
-            const currentPos = new THREE.Vector2(-100, -100);
-
-            function onPointerMove(clientX, clientY, w, h) {
-                mouseScreen.x = (clientX / w) * 2 - 1;
-                mouseScreen.y = -(clientY / h) * 2 + 1;
-                raycaster.setFromCamera(mouseScreen, camera);
-                const hits = raycaster.intersectObject(terrain);
-                if (hits.length > 0) {
-                    const localPt = terrain.worldToLocal(hits[0].point.clone());
-                    targetPos.set(localPt.x, localPt.y);
-                }
-            }
-
-            try {
-                window.parent.addEventListener('mousemove', (e) => {
-                    onPointerMove(e.clientX, e.clientY, window.parent.innerWidth, window.parent.innerHeight);
-                });
-                window.parent.addEventListener('touchmove', (e) => {
-                    if (e.touches.length > 0) {
-                        onPointerMove(e.touches[0].clientX, e.touches[0].clientY, window.parent.innerWidth, window.parent.innerHeight);
-                    }
-                });
-            } catch (err) {
-                window.addEventListener('mousemove', (e) => {
-                    onPointerMove(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
-                });
-            }
-
-            // 4. LOOP DE ANIMAÇÃO A 60 FPS
-            const clock = new THREE.Clock();
+            // 3. ANIMAÇÃO AMBIENTE LENTA E MAJESTOSA
+            let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                const elapsed = clock.getElapsedTime();
+                time += 0.0008; // Ritmo reduzido
 
-                terrainMat.uniforms.uTime.value = elapsed;
-                particlesMat.uniforms.uTime.value = elapsed;
+                // Movimento do túnel quase estático e suave
+                for (let i = 0; i < ringCount; i++) {
+                    const r = rings[i];
+                    r.position.z += 0.007; // Deslize ultra suave (antes era 0.032)
+                    if (r.position.z > 6.0) {
+                        r.position.z = -ringCount * 1.5 + 6.0;
+                    }
+                    const pz = r.position.z;
+                    r.position.x = Math.sin(pz * 0.08 + time) * 1.0;
+                    r.position.y = Math.cos(pz * 0.08 + time) * 1.0;
+                    r.rotation.z = pz * 0.1 + time * 0.02;
+                }
 
-                currentPos.lerp(targetPos, 0.08);
-                terrainMat.uniforms.uMouse.value.copy(currentPos);
-                particlesMat.uniforms.uMouse.value.copy(currentPos);
+                // Partículas em flutuação lenta
+                const pos = particles.geometry.attributes.position.array;
+                for (let i = 0; i < pCount * 3; i += 3) {
+                    pos[i+2] += pSpeed[i/3];
+                    if (pos[i+2] > 6.0) {
+                        pos[i+2] = -65;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.rotation.z += 0.0001;
 
-                camera.position.x = Math.sin(elapsed * 0.18) * 0.3;
-                camera.position.y = 1.4 + Math.cos(elapsed * 0.14) * 0.12;
+                // Oscilação impercetível da câmara
+                camera.position.x = Math.sin(time * 0.2) * 0.18;
+                camera.position.y = Math.cos(time * 0.15) * 0.14;
+                camera.rotation.z = Math.sin(time * 0.1) * 0.015;
 
                 renderer.render(scene, camera);
             }
@@ -281,24 +137,24 @@ def injetar_fundo_webgl_moderno():
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             });
         </script>
     </body>
     </html>
     """
-    components.html(webgl_html, height=0)
+    components.html(tunel_html, height=0)
 
-injetar_fundo_webgl_moderno()
+injetar_fundo_tunel_suave()
 
-# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM CORPORATIVO ----------------
+# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
     <style>
+    /* Transparência Global */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
         background: transparent !important;
     }
     body {
-        background-color: #020406 !important;
+        background-color: #030609 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -326,27 +182,26 @@ st.markdown("""
         position: relative !important;
         z-index: 10 !important;
         max-width: 1200px !important;
-        padding-top: 1.8rem !important;
+        padding-top: 2rem !important;
     }
 
     .glass-card {
-        background: rgba(8, 14, 20, 0.65) !important;
-        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        background: rgba(7, 13, 19, 0.82) !important;
+        border: 1px solid rgba(0, 217, 217, 0.24) !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
     }
 
     .main-header {
-        background: linear-gradient(135deg, rgba(10, 18, 26, 0.75) 0%, rgba(4, 8, 12, 0.75) 100%) !important;
-        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        background: linear-gradient(135deg, rgba(8, 15, 21, 0.9) 0%, rgba(4, 7, 11, 0.9) 100%) !important;
+        border: 1px solid rgba(0, 217, 217, 0.32) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
         backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
         box-shadow: 0 8px 35px rgba(0, 0, 0, 0.7);
     }
 
@@ -361,24 +216,23 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .badge-turquoise { 
-        background: rgba(56, 189, 248, 0.12) !important; 
-        color: #38bdf8 !important; 
-        border: 1px solid rgba(56, 189, 248, 0.3) !important; 
+        background: rgba(0, 217, 217, 0.14); 
+        color: #00D9D9; 
+        border: 1px solid rgba(0, 217, 217, 0.38); 
     }
     .badge-purple { 
-        background: rgba(168, 85, 247, 0.12) !important; 
-        color: #c084fc !important; 
-        border: 1px solid rgba(168, 85, 247, 0.3) !important; 
+        background: rgba(168, 85, 247, 0.15); 
+        color: #c084fc; 
+        border: 1px solid rgba(168, 85, 247, 0.3); 
     }
 
     div[data-testid="stMetric"] {
-        background: rgba(8, 14, 20, 0.7) !important;
-        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        background: rgba(7, 13, 19, 0.84) !important;
+        border: 1px solid rgba(0, 217, 217, 0.22) !important;
         padding: 16px;
         border-radius: 12px;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(14px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
     }
     div[data-testid="stMetricLabel"] p {
         color: #94a3b8 !important;
@@ -388,18 +242,18 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
     div[data-testid="stMetricValue"] div {
-        color: #f8fafc !important;
+        color: #00D9D9 !important;
         font-size: 24px !important;
         font-weight: 700;
+        text-shadow: 0 0 12px rgba(0, 217, 217, 0.25);
     }
 
     div[data-testid="stFileUploader"] {
-        background: rgba(8, 14, 20, 0.7) !important;
-        border: 1px dashed rgba(148, 163, 184, 0.3) !important;
+        background: rgba(7, 13, 19, 0.78) !important;
+        border: 1px dashed rgba(0, 217, 217, 0.42) !important;
         border-radius: 14px !important;
         padding: 18px !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
+        backdrop-filter: blur(14px) !important;
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5) !important;
     }
 
@@ -409,13 +263,13 @@ st.markdown("""
         font-weight: 600 !important;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        color: #38bdf8 !important;
-        border-bottom-color: #38bdf8 !important;
+        color: #00D9D9 !important;
+        border-bottom-color: #00D9D9 !important;
     }
 
     .pricing-card {
-        background: rgba(8, 14, 20, 0.75);
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(7, 13, 19, 0.84);
+        border: 1px solid rgba(0, 217, 217, 0.22);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -425,21 +279,21 @@ st.markdown("""
         backdrop-filter: blur(14px);
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, rgba(56, 189, 248, 0.1) 0%, rgba(8, 14, 20, 0.75) 100%);
-        border: 2px solid #38bdf8;
-        box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
+        background: linear-gradient(180deg, rgba(11, 23, 32, 0.92) 0%, rgba(5, 9, 13, 0.92) 100%);
+        border: 2px solid #00D9D9;
+        box-shadow: 0 8px 32px rgba(0, 217, 217, 0.25);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        backdrop-filter: blur(14px);
+        backdrop-filter: blur(16px);
     }
     .pricing-price {
         font-size: 32px;
         font-weight: 800;
-        color: #f8fafc;
+        color: #ffffff;
         margin: 12px 0 4px 0;
     }
     .pricing-sub {
@@ -460,7 +314,7 @@ st.markdown("""
         align-items: center;
     }
     .check-icon {
-        color: #38bdf8;
+        color: #00D9D9;
         font-weight: bold;
         margin-right: 8px;
     }
@@ -551,7 +405,7 @@ def processar_saft_completo(xml_bytes):
 
 def exibir_tabela_precos():
     st.markdown("### 💎 Planos de Acompanhamento Mensal")
-    st.markdown("Disponibilizamos planos para **empresas** e soluções com marca própria para **gabinetes de contabilidade**:")
+    st.markdown("Disponibilizamos planos para **empresas** e versões personalizadas para **gabinetes de contabilidade**:")
     
     col_p1, col_p2, col_p3 = st.columns(3)
 
@@ -560,7 +414,7 @@ def exibir_tabela_precos():
         <div class="pricing-card">
             <div>
                 <span class="badge-pill badge-turquoise">Diagnóstico</span>
-                <h3 style="margin: 0; color: #f8fafc;">Acesso Gratuito</h3>
+                <h3 style="margin: 0; color: #ffffff;">Acesso Gratuito</h3>
                 <div class="pricing-price">0 €</div>
                 <div class="pricing-sub">Para testes e diagnósticos pontuais</div>
                 <ul class="feature-list">
@@ -579,7 +433,7 @@ def exibir_tabela_precos():
         <div class="pricing-card">
             <div>
                 <span class="badge-pill badge-turquoise">Empresas</span>
-                <h3 style="margin: 0; color: #f8fafc;">PME Gestão</h3>
+                <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
                 <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Acompanhamento executivo contínuo</div>
                 <ul class="feature-list">
@@ -601,8 +455,8 @@ def exibir_tabela_precos():
         <div class="pricing-card-featured">
             <div>
                 <span class="badge-pill badge-purple">⭐ Mais Escolhido</span>
-                <h3 style="margin: 0; color: #f8fafc;">Gabinete Pro</h3>
-                <div class="pricing-price">79 € <span style="font-size: 15px; color: #38bdf8; font-weight: normal;">/mês</span></div>
+                <h3 style="margin: 0; color: #ffffff;">Gabinete Pro</h3>
+                <div class="pricing-price">79 € <span style="font-size: 15px; color: #00D9D9; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Para Gabinetes de Contabilidade & TOCs</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b></li>
@@ -622,8 +476,8 @@ def exibir_tabela_precos():
 st.markdown("""
 <div class="main-header">
     <span class="badge-pill badge-turquoise">⚡ PLATAFORMA CORPORATIVA • SAF-T ANALYTICS</span>
-    <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #f8fafc;">SAF-T Intelligence Pro</h1>
-    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #38bdf8;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
+    <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
+    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Diagnóstico e Auditoria Executiva para PMEs e Contabilidade</h3>
     <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
         Processamento seguro de ficheiros fiscais, apuramento de volume real sem notas de crédito, matriz 80/20 e conferência de IVA.
     </p>
@@ -642,7 +496,7 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Segurança Corporativa</span>
-            <h3 style="margin-top: 8px; color: #f8fafc;">🔒 100% In-Memory (RGPD)</h3>
+            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Os dados fiscais e documentos são analisados estritamente na memória da sessão de navegação. Nenhum valor comercial é gravado em bases de dados externas.
             </p>
@@ -653,7 +507,7 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
-            <h3 style="margin-top: 8px; color: #f8fafc;">📊 Curva ABC & Risco 80/20</h3>
+            <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Identifica os clientes críticos que asseguram 80% do fluxo de caixa e obtém alertas automáticos sobre dependência excessiva de faturação.
             </p>
@@ -664,7 +518,7 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="glass-card">
             <span class="badge-pill badge-turquoise">Conferência Fiscal</span>
-            <h3 style="margin-top: 8px; color: #f8fafc;">⚖️ Auditoria de IVA</h3>
+            <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
                 Resumo instantâneo de faturas emitidas vs. notas de crédito, discriminado por escalões de imposto (Normal 23%, Intermédia, Reduzida e Isenções).
             </p>
@@ -741,7 +595,7 @@ else:
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df_diario = df.groupby(df['Data_dt'].dt.date)['ValorBruto'].sum().reset_index()
             df_diario.columns = ['Data', 'Faturação Diária (€)']
-            st.line_chart(df_diario.set_index('Data'), color="#38bdf8")
+            st.line_chart(df_diario.set_index('Data'), color="#00D9D9")
 
         # TAB 2: CURVA ABC
         with tab_abc:
@@ -775,7 +629,7 @@ else:
             col_abc_chart, col_abc_table = st.columns([1.2, 1])
             with col_abc_chart:
                 st.subheader("Top Clientes da Carteira")
-                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#38bdf8")
+                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#00D9D9")
 
             with col_abc_table:
                 st.subheader("Detetor Estratégico")
