@@ -13,9 +13,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- MOTOR 3D: TÚNEL ESPIRAL ULTRA-SUAVE (FUNDO GLOBAL) ----------------
-def injetar_fundo_tunel_suave():
-    tunel_html = """
+# ---------------- MOTOR 3D: IRIDESCENT OIL-SLICK PARTICLE BULGE ON HOVER ----------------
+def injetar_fundo_iridescente_3d():
+    oil_slick_html = """
     <!DOCTYPE html>
     <html>
     <head>
@@ -32,102 +32,165 @@ def injetar_fundo_tunel_suave():
         <script>
             const canvas = document.getElementById('bg-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030609, 0.04);
+            scene.fog = new THREE.FogExp2(0x030609, 0.032);
 
-            const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.z = 5.0;
+            const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, -0.6, 7.8);
+            camera.lookAt(0, 0, 0);
 
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // 1. ANÉIS POLIGONAIS DA ESPIRAL
-            const ringCount = 44;
-            const rings = [];
-            const sides = 8;
-            const radius = 3.6;
-            const ringPts = [];
+            // Grelha de partículas de alta densidade
+            const gridWidth = 32;
+            const gridHeight = 20;
+            const segmentsX = 180;
+            const segmentsY = 110;
+            const geometry = new THREE.PlaneGeometry(gridWidth, gridHeight, segmentsX, segmentsY);
 
-            for (let s = 0; s <= sides; s++) {
-                const a = (s / sides) * Math.PI * 2;
-                ringPts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0));
-            }
-            const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+            // Vertex Shader: Ondulação orgânica contínua + Deformação Bulge sob o cursor
+            const vertexShader = `
+                uniform float uTime;
+                uniform vec2 uMouse;
+                uniform float uBulgeRadius;
+                uniform float uBulgeStrength;
 
-            for (let i = 0; i < ringCount; i++) {
-                const isBright = (i % 2 === 0);
-                const ringMat = new THREE.LineBasicMaterial({
-                    color: isBright ? 0x00D9D9 : 0x008b8b,
-                    transparent: true,
-                    opacity: isBright ? 0.30 : 0.15
-                });
-                const ring = new THREE.Line(ringGeo, ringMat);
-                ring.position.z = -i * 1.5;
-                scene.add(ring);
-                rings.push(ring);
-            }
+                varying vec2 vUv;
+                varying float vElevation;
+                varying float vDist;
 
-            // 2. VÓRTICE DE PARTÍCULAS ULTRA-LENTO
-            const pCount = 950;
-            const pGeo = new THREE.BufferGeometry();
-            const pPos = new Float32Array(pCount * 3);
-            const pSpeed = new Float32Array(pCount);
+                void main() {
+                    vUv = uv;
+                    vec3 pos = position;
 
-            for (let i = 0; i < pCount * 3; i += 3) {
-                const angle = Math.random() * Math.PI * 2;
-                const r = 1.9 + Math.random() * 4.8;
-                pPos[i] = Math.cos(angle) * r;
-                pPos[i+1] = Math.sin(angle) * r;
-                pPos[i+2] = -Math.random() * 65;
-                // Velocidade reduzida para deslize ambiente mínimo
-                pSpeed[i/3] = 0.005 + Math.random() * 0.008;
-            }
-            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    // Movimento ondulatório fluido suave (oil-slick surface)
+                    float wave1 = sin(pos.x * 0.40 + uTime * 0.65) * cos(pos.y * 0.40 + uTime * 0.50) * 0.38;
+                    float wave2 = sin(pos.x * 0.85 - uTime * 0.35 + pos.y * 0.55) * 0.16;
 
-            const pMat = new THREE.PointsMaterial({
-                color: 0x00D9D9,
-                size: 0.040,
+                    // Cálculo da deformação 3D (Bulge) sob o cursor
+                    float dist = distance(pos.xy, uMouse);
+                    vDist = dist;
+                    float bulge = smoothstep(uBulgeRadius, 0.0, dist);
+                    bulge = pow(bulge, 1.8) * uBulgeStrength;
+
+                    pos.z += wave1 + wave2 + bulge;
+                    vElevation = pos.z;
+
+                    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                    // Aumenta ligeiramente a partícula no topo do bulge
+                    gl_PointSize = (18.5 / -mvPosition.z) * (1.0 + bulge * 0.85);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `;
+
+            // Fragment Shader: Paleta iridescente de óleo (Turquesa #00D9D9, Petróleo, Violeta e Ouro)
+            const fragmentShader = `
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                varying float vDist;
+
+                vec3 palette(float t) {
+                    // Cosine color palette calibrada para o efeito mancha de óleo
+                    vec3 a = vec3(0.20, 0.60, 0.70);
+                    vec3 b = vec3(0.35, 0.38, 0.38);
+                    vec3 c = vec3(0.85, 0.95, 1.15);
+                    vec3 d = vec3(0.02, 0.26, 0.52);
+                    return a + b * cos(6.28318 * (c * t + d));
+                }
+
+                void main() {
+                    // Ponto circular com brilho radial suave
+                    float distCenter = length(gl_PointCoord - vec2(0.5));
+                    if (distCenter > 0.5) discard;
+                    float alpha = smoothstep(0.5, 0.06, distCenter);
+
+                    // Gradiente iridescente reativo à altura e ao movimento
+                    float t = vElevation * 0.42 + vUv.x * 0.22 + sin(uTime * 0.22) * 0.12;
+                    vec3 col = palette(t);
+
+                    // Reflexo iridescente especular no ápice do bulge
+                    float sheen = smoothstep(2.8, 0.0, vDist) * 0.45;
+                    col += vec3(0.12, 0.40, 0.40) * sheen;
+
+                    gl_FragColor = vec4(col, alpha * 0.76);
+                }
+            `;
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uMouse: { value: new THREE.Vector2(-100, -100) },
+                    uBulgeRadius: { value: 4.2 },
+                    uBulgeStrength: { value: 2.4 }
+                },
                 transparent: true,
-                opacity: 0.65,
+                depthWrite: false,
                 blending: THREE.AdditiveBlending
             });
-            const particles = new THREE.Points(pGeo, pMat);
+
+            const particles = new THREE.Points(geometry, material);
+            particles.rotation.x = -0.36; // Perspetiva suave do horizonte
             scene.add(particles);
 
-            // 3. ANIMAÇÃO AMBIENTE LENTA E MAJESTOSA
-            let time = 0;
+            // Plano invisível para intersecção de raio (Raycasting preciso)
+            const hitPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(45, 30),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            hitPlane.rotation.x = -0.36;
+            scene.add(hitPlane);
+
+            // Deteção suave do rato com interpolação (Lerp)
+            const raycaster = new THREE.Raycaster();
+            const mouseScreen = new THREE.Vector2(-10, -10);
+            const targetPos = new THREE.Vector2(-100, -100);
+            const currentPos = new THREE.Vector2(-100, -100);
+
+            function updatePointer(clientX, clientY, w, h) {
+                mouseScreen.x = (clientX / w) * 2 - 1;
+                mouseScreen.y = -(clientY / h) * 2 + 1;
+                raycaster.setFromCamera(mouseScreen, camera);
+                const hits = raycaster.intersectObject(hitPlane);
+                if (hits.length > 0) {
+                    const localPt = particles.worldToLocal(hits[0].point.clone());
+                    targetPos.set(localPt.x, localPt.y);
+                }
+            }
+
+            // Captura eventos do rato mesmo por cima dos cartões de interface
+            try {
+                window.parent.addEventListener('mousemove', (e) => {
+                    updatePointer(e.clientX, e.clientY, window.parent.innerWidth, window.parent.innerHeight);
+                });
+                window.parent.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        updatePointer(e.touches[0].clientX, e.touches[0].clientY, window.parent.innerWidth, window.parent.innerHeight);
+                    }
+                });
+            } catch (err) {
+                window.addEventListener('mousemove', (e) => {
+                    updatePointer(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
+                });
+            }
+
+            // Loop de Renderização a 60 FPS
+            let clock = new THREE.Clock();
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.0008; // Ritmo reduzido
+                const elapsedTime = clock.getElapsedTime();
+                material.uniforms.uTime.value = elapsedTime;
 
-                // Movimento do túnel quase estático e suave
-                for (let i = 0; i < ringCount; i++) {
-                    const r = rings[i];
-                    r.position.z += 0.007; // Deslize ultra suave (antes era 0.032)
-                    if (r.position.z > 6.0) {
-                        r.position.z = -ringCount * 1.5 + 6.0;
-                    }
-                    const pz = r.position.z;
-                    r.position.x = Math.sin(pz * 0.08 + time) * 1.0;
-                    r.position.y = Math.cos(pz * 0.08 + time) * 1.0;
-                    r.rotation.z = pz * 0.1 + time * 0.02;
-                }
+                // Amortecimento suave na subida e movimento do bulge
+                currentPos.lerp(targetPos, 0.08);
+                material.uniforms.uMouse.value.copy(currentPos);
 
-                // Partículas em flutuação lenta
-                const pos = particles.geometry.attributes.position.array;
-                for (let i = 0; i < pCount * 3; i += 3) {
-                    pos[i+2] += pSpeed[i/3];
-                    if (pos[i+2] > 6.0) {
-                        pos[i+2] = -65;
-                    }
-                }
-                particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.0001;
-
-                // Oscilação impercetível da câmara
-                camera.position.x = Math.sin(time * 0.2) * 0.18;
-                camera.position.y = Math.cos(time * 0.15) * 0.14;
-                camera.rotation.z = Math.sin(time * 0.1) * 0.015;
+                // Flutuação subtil da câmara
+                camera.position.x = Math.sin(elapsedTime * 0.25) * 0.15;
+                camera.position.y = -0.6 + Math.cos(elapsedTime * 0.20) * 0.12;
 
                 renderer.render(scene, camera);
             }
@@ -142,9 +205,9 @@ def injetar_fundo_tunel_suave():
     </body>
     </html>
     """
-    components.html(tunel_html, height=0)
+    components.html(oil_slick_html, height=0)
 
-injetar_fundo_tunel_suave()
+injetar_fundo_iridescente_3d()
 
 # ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
@@ -185,6 +248,7 @@ st.markdown("""
         padding-top: 2rem !important;
     }
 
+    /* Cartões Glassmorphism Translúcidos */
     .glass-card {
         background: rgba(7, 13, 19, 0.82) !important;
         border: 1px solid rgba(0, 217, 217, 0.24) !important;
@@ -226,6 +290,7 @@ st.markdown("""
         border: 1px solid rgba(168, 85, 247, 0.3); 
     }
 
+    /* Cartões de Métricas */
     div[data-testid="stMetric"] {
         background: rgba(7, 13, 19, 0.84) !important;
         border: 1px solid rgba(0, 217, 217, 0.22) !important;
