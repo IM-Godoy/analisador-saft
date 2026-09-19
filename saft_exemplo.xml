@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_1.04_01">
+  <MasterFiles>
+    <Customer>
+      <CustomerID>C001</CustomerID>
+      <CompanyName>Oficina Central de Aveiro Lda</CompanyName>
+    </Customer>
+    <Customer>
+      <CustomerID>C002</CustomerID>
+      <CompanyName>Padaria e Confeitaria Ribeira</CompanyName>
+    </Customer>
+    <Customer>
+      <CustomerID>C003</CustomerID>
+      <CompanyName>Logística do Centro Transportes SA</CompanyName>
+    </Customer>
+  </MasterFiles>
+  <SourceDocuments>
+    <SalesInvoices>
+      <Invoice>
+        <InvoiceNo>FT 2026/1</InvoiceNo>
+        <InvoiceDate>2026-09-02</InvoiceDate>
+        <InvoiceType>FT</InvoiceType>
+        <CustomerID>C001</CustomerID>
+        <DocumentTotals>
+          <GrossTotal>1250.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+      <Invoice>
+        <InvoiceNo>FT 2026/2</InvoiceNo>
+        <InvoiceDate>2026-09-05</InvoiceDate>
+        <InvoiceType>FT</InvoiceType>
+        <CustomerID>C002</CustomerID>
+        <DocumentTotals>
+          <GrossTotal>450.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+      <Invoice>
+        <InvoiceNo>FT 2026/3</InvoiceNo>
+        <InvoiceDate>2026-09-10</InvoiceDate>
+        <InvoiceType>FT</InvoiceType>
+        <CustomerID>C003</CustomerID>
+        <DocumentTotals>
+          <GrossTotal>3200.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+      <Invoice>
+        <InvoiceNo>NC 2026/1</InvoiceNo>
+        <InvoiceDate>2026-09-12</InvoiceDate>
+        <InvoiceType>NC</InvoiceType>
+        <CustomerID>C001</CustomerID>
+        <DocumentTotals>
+          <GrossTotal>150.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+    </SalesInvoices>
+  </SourceDocuments>
+</AuditFile>
