@@ -24,17 +24,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTOR 3D: TÚNEL LENTO E SÓBRIO (EXCLUSIVO PARA A PÁGINA INICIAL) ----------------
-def injetar_fundo_tunel_lento():
-    tunel_html = """
+# ---------------- MOTOR 3D: TÚNEL DINÂMICO (ANIMADO NA HOME, ESTÁTICO APÓS UPLOAD) ----------------
+def injetar_fundo_tunel(animating=True):
+    tunel_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
         <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { width: 100vw; height: 100vh; overflow: hidden; background: #030609; }
-            canvas { width: 100%; height: 100%; display: block; }
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            html, body {{ width: 100vw; height: 100vh; overflow: hidden; background: #030609; }}
+            canvas {{ width: 100%; height: 100%; display: block; }}
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     </head>
@@ -48,7 +48,7 @@ def injetar_fundo_tunel_lento():
             const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.z = 4.0;
 
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            const renderer = new THREE.WebGLRenderer({{ canvas: canvas, antialias: true, alpha: true }});
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -58,15 +58,15 @@ def injetar_fundo_tunel_lento():
             const radius = 4.0;
             const ringPts = [];
 
-            for (let s = 0; s <= sides; s++) {
+            for (let s = 0; s <= sides; s++) {{
                 const a = (s / sides) * Math.PI * 2;
                 ringPts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0));
-            }
+            }}
             const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
 
-            for (let i = 0; i < ringCount; i++) {
+            for (let i = 0; i < ringCount; i++) {{
                 const isAccent = (i % 4 === 0);
-                const ringMat = new THREE.LineBasicMaterial({
+                const ringMat = new THREE.LineBasicMaterial({{
                     color: isAccent ? 0xa855f7 : 0x00D9D9,
                     transparent: true,
                     opacity: isAccent ? 0.35 : 0.15
@@ -75,24 +75,24 @@ def injetar_fundo_tunel_lento():
                 ring.position.z = -i * 1.5;
                 scene.add(ring);
                 rings.push(ring);
-            }
+            }}
 
             const pCount = 1200;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
             const pSpeed = new Float32Array(pCount);
 
-            for (let i = 0; i < pCount * 3; i += 3) {
+            for (let i = 0; i < pCount * 3; i += 3) {{
                 const angle = Math.random() * Math.PI * 2;
                 const r = 0.5 + Math.random() * 5.0;
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
                 pPos[i+2] = -Math.random() * 75;
                 pSpeed[i/3] = 0.003 + Math.random() * 0.004;
-            }
+            }}
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
-            const pMat = new THREE.PointsMaterial({
+            const pMat = new THREE.PointsMaterial({{
                 color: 0x00D9D9,
                 size: 0.045,
                 transparent: true,
@@ -102,55 +102,66 @@ def injetar_fundo_tunel_lento():
             const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            let time = 0;
-            function animate() {
-                requestAnimationFrame(animate);
-                time += 0.0003;
+            const isAnimating = {'true' if animating else 'false'};
 
-                for (let i = 0; i < ringCount; i++) {
-                    const r = rings[i];
-                    r.position.z += 0.004;
-                    if (r.position.z > 5.0) {
-                        r.position.z = -ringCount * 1.5 + 5.0;
-                    }
-                    const pz = r.position.z;
-                    r.position.x = Math.sin(pz * 0.04 + time) * 0.8;
-                    r.position.y = Math.cos(pz * 0.04 + time) * 0.8;
-                    r.rotation.z = pz * 0.05 + time * 0.01;
-                }
+            if (isAnimating) {{
+                let time = 0;
+                function animate() {{
+                    requestAnimationFrame(animate);
+                    time += 0.0003;
 
-                const pos = particles.geometry.attributes.position.array;
-                for (let i = 0; i < pCount * 3; i += 3) {
-                    pos[i+2] += pSpeed[i/3];
-                    if (pos[i+2] > 5.0) {
-                        pos[i+2] = -75;
-                    }
-                }
-                particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.00005;
+                    for (let i = 0; i < ringCount; i++) {{
+                        const r = rings[i];
+                        r.position.z += 0.004;
+                        if (r.position.z > 5.0) {{
+                            r.position.z = -ringCount * 1.5 + 5.0;
+                        }}
+                        const pz = r.position.z;
+                        r.position.x = Math.sin(pz * 0.04 + time) * 0.8;
+                        r.position.y = Math.cos(pz * 0.04 + time) * 0.8;
+                        r.rotation.z = pz * 0.05 + time * 0.01;
+                    }}
 
-                camera.position.x = Math.sin(time * 0.1) * 0.15;
-                camera.position.y = Math.cos(time * 0.08) * 0.12;
-                camera.rotation.z = Math.sin(time * 0.05) * 0.008;
+                    const pos = particles.geometry.attributes.position.array;
+                    for (let i = 0; i < pCount * 3; i += 3) {{
+                        pos[i+2] += pSpeed[i/3];
+                        if (pos[i+2] > 5.0) {{
+                            pos[i+2] = -75;
+                        }}
+                    }}
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    particles.rotation.z += 0.00005;
 
+                    camera.position.x = Math.sin(time * 0.1) * 0.15;
+                    camera.position.y = Math.cos(time * 0.08) * 0.12;
+                    camera.rotation.z = Math.sin(time * 0.05) * 0.008;
+
+                    renderer.render(scene, camera);
+                }}
+                animate();
+            }} else {{
+                // Renderização estática (congelada para focar na análise de dados)
                 renderer.render(scene, camera);
-            }
-            animate();
+            }}
 
-            window.addEventListener('resize', () => {
+            window.addEventListener('resize', () => {{
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-            });
+                renderer.render(scene, camera);
+            }});
         </script>
     </body>
     </html>
     """
     components.html(tunel_html, height=0)
 
-# ---------------- ESTILOS VISUAIS GLOBAIS ----------------
+# ---------------- ESTILOS VISUAIS GLOBAIS (FUNDO TRANSPARENTE) ----------------
 st.markdown("""
     <style>
+    html, body, .stApp, [data-testid="stAppViewContainer"], .main {
+        background: transparent !important;
+    }
     body {
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -479,19 +490,11 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (FUNDO TRANSPARENTE + TÚNEL 3D) ----------------
-if ficheiro_saft is None:
-    # Torna o fundo transparente para o túnel 3D imersivo aparecer
-    st.markdown("""
-        <style>
-        html, body, .stApp, [data-testid="stAppViewContainer"], .main {
-            background: transparent !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    injetar_fundo_tunel_lento()
+# Injetar o túnel dinâmico: animado se não houver ficheiro, estático se o ficheiro estiver carregado
+injetar_fundo_tunel(animating=(ficheiro_saft is None))
 
+# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
+if ficheiro_saft is None:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### Pilares de Inteligência Financeira e Fiscal:")
     col_h1, col_h2, col_h3 = st.columns(3)
@@ -529,17 +532,8 @@ if ficheiro_saft is None:
         </div>
         """, unsafe_allow_html=True)
 
-# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO (FUNDO ESTÁTICO E SÓLIDO) ----------------
+# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO ----------------
 else:
-    # Torna o fundo sólido e limpo para focar nos dados e gráficos
-    st.markdown("""
-        <style>
-        html, body, .stApp, [data-testid="stAppViewContainer"], .main {
-            background-color: #030609 !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
     try:
         bytes_data = ficheiro_saft.read()
         df, df_tax = processar_saft_completo(bytes_data)
