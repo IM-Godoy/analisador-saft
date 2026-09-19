@@ -7,7 +7,7 @@ import json
 
 st.set_page_config(page_title="Analisador SAF-T Pro", page_icon="📊", layout="wide")
 
-# Estilo adaptado ao modo escuro
+# Estilo adaptado
 st.markdown("""
     <style>
     div[data-testid="stMetric"] {
@@ -50,7 +50,6 @@ def processar_saft_bytes(xml_bytes):
     namespace = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
     prefix = 'ns:' if namespace else ''
 
-    # Mapa de Clientes
     clientes = {}
     for customer in root.findall(f'.//{prefix}Customer', namespace):
         cust_id = customer.find(f'{prefix}CustomerID', namespace)
@@ -58,7 +57,6 @@ def processar_saft_bytes(xml_bytes):
         if cust_id is not None and cust_name is not None:
             clientes[cust_id.text] = corrigir_texto(cust_name.text)
 
-    # Lista de Faturas
     dados = []
     for invoice in root.findall(f'.//{prefix}Invoice', namespace):
         doc_no = invoice.find(f'{prefix}InvoiceNo', namespace).text
@@ -135,14 +133,12 @@ if ficheiro_saft is not None:
         bytes_data = ficheiro_saft.read()
         df = processar_saft_bytes(bytes_data)
 
-        # Métricas Globais
         faturacao_liquida = df['Valor'].sum()
         faturas_positivas = df[df['Tipo'] != 'NC']
         total_faturas = len(faturas_positivas)
         total_nc = len(df[df['Tipo'] == 'NC'])
         ticket_medio = faturacao_liquida / total_faturas if total_faturas > 0 else 0
         
-        # Agrupamento de clientes
         df_clientes = df.groupby('Cliente')['Valor'].sum().sort_values(ascending=False).reset_index()
         df_clientes['% da Receita'] = (df_clientes['Valor'] / faturacao_liquida * 100).map("{:.1f}%".format)
         df_clientes['Valor (€)'] = df_clientes['Valor'].map("{:,.2f} €".format)
@@ -153,7 +149,6 @@ if ficheiro_saft is not None:
 
         st.divider()
 
-        # 4 Cartões de Métricas
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Faturação Líquida", f"{faturacao_liquida:,.2f} €")
         col2.metric("Ticket Médio", f"{ticket_medio:,.2f} €")
@@ -163,7 +158,6 @@ if ficheiro_saft is not None:
         if concentracao > 40:
             st.warning(f"⚠️ **Alerta de Dependência:** O cliente **{maior_cliente_nome}** representa **{concentracao:.1f}%** da receita. Risco elevado para o fluxo de tesouraria.")
 
-        # Gráfico e Tabela
         col_grafico, col_tabela = st.columns([1.2, 1])
 
         with col_grafico:
@@ -179,7 +173,6 @@ if ficheiro_saft is not None:
                 hide_index=True
             )
 
-        # Botão de Download
         st.divider()
         html_doc = gerar_html_download(faturacao_liquida, total_faturas, total_nc, maior_cliente_nome, concentracao, df_clientes)
         
@@ -211,10 +204,11 @@ if ficheiro_saft is not None:
                     if nome and contacto:
                         try:
                             payload = json.dumps({
-                                "Nome": nome,
-                                "Contacto": contacto,
-                                "Perfil": tipo_perfil,
-                                "_subject": f"🔥 Novo Lead SAF-T: {nome}"
+                                "nome": nome,
+                                "contacto": contacto,
+                                "perfil": tipo_perfil,
+                                "_subject": f"🔥 Novo Lead SAF-T: {nome}",
+                                "_captcha": "false"
                             }).encode("utf-8")
 
                             req = urllib.request.Request(
@@ -223,17 +217,21 @@ if ficheiro_saft is not None:
                                 headers={
                                     "Content-Type": "application/json",
                                     "Accept": "application/json",
-                                    "User-Agent": "Mozilla/5.0"
+                                    "User-Agent": "Mozilla/5.0",
+                                    "Referer": "https://im-godoy-analisador-saft-app-xwvmax.streamlit.app"
                                 }
                             )
 
                             with urllib.request.urlopen(req) as resp:
-                                if resp.status == 200:
+                                res_json = json.loads(resp.read().decode("utf-8"))
+                                if str(res_json.get("success")).lower() == "true":
                                     st.success("✅ Pedido registado com sucesso! Entraremos em contacto em até 24 horas.")
+                                elif "message" in res_json:
+                                    st.info(f"ℹ️ {res_json['message']}")
                                 else:
-                                    st.warning("Recebemos o pedido, mas ocorreu uma oscilação na notificação.")
-                        except Exception:
-                            st.success("✅ Pedido registado com sucesso!")
+                                    st.success("✅ Pedido registado com sucesso!")
+                        except Exception as e:
+                            st.error(f"Erro no envio: {e}")
                     else:
                         st.error("Por favor, preencha o seu nome e contacto.")
 
@@ -241,7 +239,6 @@ if ficheiro_saft is not None:
             st.markdown("**Prefere falar diretamente por WhatsApp?**")
             st.write("Tire dúvidas instantâneas ou solicite um teste para a sua carteira de clientes:")
             
-            # Se quiser mudar para o seu número real depois, altere aqui:
             numero_whatsapp = "351935009099" 
             mensagem_padrao = "Olá! Estive a testar o Analisador SAF-T Pro e gostaria de saber mais informações sobre os planos mensais."
             url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(mensagem_padrao)}"
