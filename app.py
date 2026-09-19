@@ -20,8 +20,8 @@ st.markdown("""
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border: 1px solid #334155;
         border-radius: 14px;
-        padding: 26px;
-        margin-bottom: 25px;
+        padding: 24px;
+        margin-bottom: 20px;
     }
     .badge-pill {
         display: inline-block;
@@ -116,119 +116,421 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- COMPONENTE 3D WEBGL FUTURÍSTICO ----------------
-def render_3d_hero():
-    canvas_3d_code = """
+# ---------------- COMPONENTE 3D AWWWARDS: THE STATE OF THE GALLERY ----------------
+def render_3d_gallery_transition():
+    gallery_3d_code = """
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
         <style>
-            body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
-            #container-3d {
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 0; overflow: hidden; background: #07090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            #scene-wrap {
                 width: 100%;
-                height: 290px;
+                height: 420px;
                 position: relative;
-                border-radius: 14px;
-                background: radial-gradient(circle at center, #1e293b 0%, #0b1329 100%);
-                border: 1px solid #334155;
-                box-shadow: inset 0 0 40px rgba(56, 189, 248, 0.05);
+                border-radius: 16px;
+                background: radial-gradient(circle at 50% 30%, #172554 0%, #07090e 75%);
+                border: 1px solid #1e293b;
+                overflow: hidden;
+                box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
             }
-            .hud-overlay {
+            .hud-header {
                 position: absolute;
-                top: 14px;
-                left: 18px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                top: 16px;
+                left: 20px;
+                right: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                pointer-events: none;
+                z-index: 10;
+            }
+            .hud-badge {
                 font-size: 11px;
                 font-weight: 700;
                 color: #38bdf8;
-                letter-spacing: 1px;
+                letter-spacing: 1.5px;
                 text-transform: uppercase;
-                background: rgba(15, 23, 42, 0.7);
-                border: 1px solid rgba(56, 189, 248, 0.3);
-                padding: 4px 12px;
+                background: rgba(15, 23, 42, 0.75);
+                border: 1px solid rgba(56, 189, 248, 0.35);
+                padding: 6px 14px;
                 border-radius: 20px;
-                pointer-events: none;
+                backdrop-filter: blur(8px);
             }
-            .hud-right {
-                position: absolute;
-                bottom: 14px;
-                right: 18px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            .hud-status {
                 font-size: 11px;
                 color: #94a3b8;
-                pointer-events: none;
+                letter-spacing: 1px;
+                background: rgba(15, 23, 42, 0.6);
+                padding: 6px 12px;
+                border-radius: 20px;
+                border: 1px solid rgba(255,255,255,0.08);
             }
-            canvas { display: block; width: 100%; height: 100%; }
+            /* Botões de Transição de Cena (Estilo Awwwards) */
+            .scene-nav {
+                position: absolute;
+                bottom: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                background: rgba(15, 23, 42, 0.85);
+                border: 1px solid #334155;
+                padding: 5px 8px;
+                border-radius: 30px;
+                backdrop-filter: blur(12px);
+                z-index: 10;
+            }
+            .scene-btn {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.8px;
+                padding: 8px 14px;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .scene-btn:hover {
+                color: #f8fafc;
+                background: rgba(255,255,255,0.06);
+            }
+            .scene-btn.active {
+                background: #0284c7;
+                color: #ffffff;
+                box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+            }
+            canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+            canvas:active { cursor: grabbing; }
         </style>
     </head>
     <body>
-        <div id="container-3d">
-            <div class="hud-overlay">● Motor Neural SAF-T • Visualização 3D Ativa</div>
-            <div class="hud-right">✦ Arraste o rato para interagir</div>
-            <canvas id="webgl-canvas"></canvas>
+        <div id="scene-wrap">
+            <div class="hud-header">
+                <div class="hud-badge">● THE STATE OF THE GALLERY // 3D SCENE TRANSITION</div>
+                <div class="hud-status" id="hud-indicator">CENA 01 / 03 • MODO TÚNEL</div>
+            </div>
+
+            <div class="scene-nav">
+                <button class="scene-btn active" id="btn-0" onclick="triggerScene(0)">01 // TÚNEL PERSPECTIVA</button>
+                <button class="scene-btn" id="btn-1" onclick="triggerScene(1)">02 // SPOTLIGHT FOCUS</button>
+                <button class="scene-btn" id="btn-2" onclick="triggerScene(2)">03 // MATRIZ 3D</button>
+            </div>
+
+            <canvas id="stage"></canvas>
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-        <script>
-            const container = document.getElementById('container-3d');
-            const canvas = document.getElementById('webgl-canvas');
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
+        <script>
+            const container = document.getElementById('scene-wrap');
+            const canvas = document.getElementById('stage');
+            const hudIndicator = document.getElementById('hud-indicator');
+
+            // 1. Criação da Cena e Câmara
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-            
+            scene.fog = new THREE.FogExp2(0x07090e, 0.055);
+
+            const camera = new THREE.PerspectiveCamera(46, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 0, 7.5);
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // Núcleo Geométrico Exterior (Holograma de Faturação)
-            const outerGeo = new THREE.IcosahedronGeometry(2.3, 2);
-            const outerMat = new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.38
-            });
-            const outerSphere = new THREE.Mesh(outerGeo, outerMat);
-            scene.add(outerSphere);
-
-            // Núcleo Interior Pulsante (Roxo Fintech)
-            const innerGeo = new THREE.OctahedronGeometry(1.3, 1);
-            const innerMat = new THREE.MeshBasicMaterial({
-                color: 0xa855f7,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.65
-            });
-            const innerCore = new THREE.Mesh(innerGeo, innerMat);
-            scene.add(innerCore);
-
-            // Nuvem de Partículas / Transações Financeiras Flutuantes
-            const particleCount = 160;
-            const particleGeo = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-
-            for(let i = 0; i < particleCount * 3; i += 3) {
-                positions[i] = (Math.random() - 0.5) * 8.5;
-                positions[i+1] = (Math.random() - 0.5) * 4.5;
-                positions[i+2] = (Math.random() - 0.5) * 6;
+            // 2. Partículas Cósmicas / Luzes no Espaço
+            const pCount = 280;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            for(let i = 0; i < pCount * 3; i += 3) {
+                pPos[i] = (Math.random() - 0.5) * 22;
+                pPos[i+1] = (Math.random() - 0.5) * 14;
+                pPos[i+2] = (Math.random() - 0.5) * 16;
             }
-            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-            const particleMat = new THREE.PointsMaterial({
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            const pMat = new THREE.PointsMaterial({
                 color: 0x38bdf8,
-                size: 0.08,
+                size: 0.05,
                 transparent: true,
-                opacity: 0.8
+                opacity: 0.75
             });
-            const particles = new THREE.Points(particleGeo, particleMat);
+            const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            camera.position.z = 6.2;
+            // 3. Gerador Dinâmico de Texturas de Cartões (Dark Glass UI)
+            function makeCardCanvas(badge, title, mainVal, subText, visualType) {
+                const cv = document.createElement('canvas');
+                cv.width = 512;
+                cv.height = 320;
+                const ctx = cv.getContext('2d');
 
-            // Interação suave com o rato
+                // Fundo gradiente escuro de luxo
+                const bgGrad = ctx.createLinearGradient(0, 0, 512, 320);
+                bgGrad.addColorStop(0, '#0f172a');
+                bgGrad.addColorStop(1, '#020617');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, 512, 320);
+
+                // Moldura brilhante
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(3, 3, 506, 314);
+
+                // Badge no topo
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+                ctx.fillRect(28, 24, 180, 32);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(28, 24, 180, 32);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 12px -apple-system, sans-serif';
+                ctx.fillText(badge, 40, 45);
+
+                // Título
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '14px -apple-system, sans-serif';
+                ctx.fillText(title, 28, 92);
+
+                // Valor Principal em Destaque
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 36px -apple-system, sans-serif';
+                ctx.fillText(mainVal, 28, 140);
+
+                // Subtítulo
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '13px -apple-system, sans-serif';
+                ctx.fillText(subText, 28, 172);
+
+                // Gráfico embutido no cartão
+                if(visualType === 'curve') {
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(28, 260);
+                    ctx.bezierCurveTo(140, 290, 220, 205, 330, 240);
+                    ctx.bezierCurveTo(390, 255, 430, 190, 484, 195);
+                    ctx.stroke();
+
+                    ctx.lineTo(484, 295);
+                    ctx.lineTo(28, 295);
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.09)';
+                    ctx.fill();
+                } else if(visualType === 'pareto') {
+                    const bars = [0.85, 0.58, 0.32, 0.18];
+                    const colors = ['#38bdf8', '#818cf8', '#c084fc', '#64748b'];
+                    bars.forEach((b, idx) => {
+                        ctx.fillStyle = colors[idx];
+                        ctx.fillRect(28 + idx * 56, 290 - b * 90, 40, b * 90);
+                    });
+                } else if(visualType === 'donut') {
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.lineWidth = 12;
+                    ctx.beginPath();
+                    ctx.arc(420, 230, 42, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#a855f7';
+                    ctx.lineWidth = 12;
+                    ctx.beginPath();
+                    ctx.arc(420, 230, 42, -Math.PI / 2, Math.PI * 0.9);
+                    ctx.stroke();
+                } else if(visualType === 'wave') {
+                    ctx.strokeStyle = '#22c55e';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(28, 250);
+                    ctx.lineTo(140, 250);
+                    ctx.lineTo(170, 200);
+                    ctx.lineTo(210, 280);
+                    ctx.lineTo(250, 225);
+                    ctx.lineTo(290, 250);
+                    ctx.lineTo(484, 250);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = 'rgba(148, 163, 184, 0.2)';
+                    for(let r = 0; r < 3; r++) {
+                        ctx.fillRect(28, 215 + r * 25, 456, 12);
+                    }
+                }
+
+                const tex = new THREE.CanvasTexture(cv);
+                tex.generateMipmaps = true;
+                return tex;
+            }
+
+            // 4. Criação dos 5 Cartões 3D
+            const cardData = [
+                { badge: "FATURAÇÃO LÍQUIDA", title: "Ritmo de Receita Diário", val: "650.420 €", sub: "+18.4% vs mês homólogo", type: "curve" },
+                { badge: "CURVA ABC // 80-20", title: "Concentração Estratégica", val: "3 Clientes Top", sub: "78.4% do volume de negócios", type: "pareto" },
+                { badge: "AUDITORIA FISCAL", title: "Apuramento por Taxa", val: "23% • 13% • 6%", sub: "Conferência automática de IVA", type: "donut" },
+                { badge: "QUALIDADE OPERACIONAL", title: "Taxa de Devoluções (NC)", val: "2.1% Anulado", sub: "Dentro dos padrões ótimos", type: "wave" },
+                { badge: "RELATÓRIO EXECUTIVO", title: "Diagnóstico para Decisores", val: "1-Click PDF", sub: "Pronto para apresentar à gerência", type: "doc" }
+            ];
+
+            const cards = [];
+            const cardGeo = new THREE.PlaneGeometry(3.0, 1.85);
+
+            cardData.forEach((d, i) => {
+                const group = new THREE.Group();
+
+                // Cartão frontal
+                const matFront = new THREE.MeshBasicMaterial({
+                    map: makeCardCanvas(d.badge, d.title, d.val, d.sub, d.type),
+                    transparent: true,
+                    opacity: 0.96,
+                    side: THREE.DoubleSide
+                });
+                const meshFront = new THREE.Mesh(cardGeo, matFront);
+                group.add(meshFront);
+
+                // Placa traseira em vidro escuro
+                const matBack = new THREE.MeshBasicMaterial({
+                    color: 0x070d1a,
+                    transparent: true,
+                    opacity: 0.85,
+                    side: THREE.DoubleSide
+                });
+                const meshBack = new THREE.Mesh(cardGeo, matBack);
+                meshBack.position.z = -0.02;
+                group.add(meshBack);
+
+                // Bordas luminosas com EdgesGeometry
+                const edges = new THREE.EdgesGeometry(cardGeo);
+                const line = new THREE.LineSegments(
+                    edges, 
+                    new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
+                );
+                group.add(line);
+
+                scene.add(group);
+                cards.push(group);
+            });
+
+            // 5. Configuração das 3 Cenas (Awwwards Scene Layouts)
+            const sceneLayouts = [
+                // CENA 0: TÚNEL PERSPECTIVA (O visual icónico de 'The State of the Gallery')
+                {
+                    name: "CENA 01 / 03 • MODO TÚNEL",
+                    camPos: [0, 0, 7.5],
+                    cards: [
+                        { pos: [-4.2, 0.5, -0.2], rot: [0.08, 0.45, -0.05] },
+                        { pos: [-2.1, -0.3, 1.4], rot: [0.04, 0.25, -0.02] },
+                        { pos: [0.2, 0.3, 2.5], rot: [-0.04, -0.06, 0.01] }, // Centro em destaque
+                        { pos: [2.5, -0.3, 1.2], rot: [0.03, -0.32, 0.02] },
+                        { pos: [4.6, 0.5, -0.4], rot: [0.07, -0.52, 0.06] }
+                    ]
+                },
+                // CENA 1: SPOTLIGHT DEEP FOCUS (Voo da câmara em direção ao núcleo)
+                {
+                    name: "CENA 02 / 03 • SPOTLIGHT FOCUS",
+                    camPos: [0, 0.2, 5.2],
+                    cards: [
+                        { pos: [-4.8, 2.2, -2.0], rot: [0.25, 0.45, -0.1] },
+                        { pos: [-4.2, -2.0, -1.5], rot: [-0.2, 0.35, 0.1] },
+                        { pos: [0.0, 0.0, 2.8], rot: [0.0, 0.0, 0.0] }, // Em plano direto na lente
+                        { pos: [4.2, -2.0, -1.5], rot: [-0.2, -0.35, -0.1] },
+                        { pos: [4.8, 2.2, -2.0], rot: [0.25, -0.45, 0.1] }
+                    ]
+                },
+                // CENA 2: MATRIZ HOLO-DECK 3D (Vista arquitetural isométrica)
+                {
+                    name: "CENA 03 / 03 • MATRIZ 3D",
+                    camPos: [0, 2.8, 6.6],
+                    cards: [
+                        { pos: [-3.4, 1.4, 0.6], rot: [-0.38, 0.24, 0.06] },
+                        { pos: [0.0, 1.4, 0.6], rot: [-0.38, 0.0, 0.0] },
+                        { pos: [3.4, 1.4, 0.6], rot: [-0.38, -0.24, -0.06] },
+                        { pos: [-1.8, -1.3, 1.5], rot: [-0.38, 0.12, 0.03] },
+                        { pos: [1.8, -1.3, 1.5], rot: [-0.38, -0.12, -0.03] }
+                    ]
+                }
+            ];
+
+            let activeSceneIdx = 0;
+
+            // Função principal de Transição Cinematográfica com GSAP
+            function triggerScene(index) {
+                activeSceneIdx = index;
+                const layout = sceneLayouts[index];
+
+                hudIndicator.innerText = layout.name;
+
+                // Atualizar estilo visual dos botões
+                for(let b = 0; b < 3; b++) {
+                    const btn = document.getElementById('btn-' + b);
+                    if(b === index) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+
+                // Efeito Warp nas partículas
+                gsap.to(particles.rotation, {
+                    y: particles.rotation.y + Math.PI * 0.45,
+                    duration: 1.4,
+                    ease: "power2.inOut"
+                });
+
+                // Transição da Câmara
+                gsap.to(camera.position, {
+                    x: layout.camPos[0],
+                    y: layout.camPos[1],
+                    z: layout.camPos[2],
+                    duration: 1.5,
+                    ease: "power3.inOut"
+                });
+
+                // Animação individual dos cartões com efeito dominó (Stagger)
+                cards.forEach((card, i) => {
+                    const target = layout.cards[i];
+
+                    gsap.to(card.position, {
+                        x: target.pos[0],
+                        y: target.pos[1],
+                        z: target.pos[2],
+                        duration: 1.4,
+                        delay: i * 0.045,
+                        ease: "power3.inOut"
+                    });
+
+                    gsap.to(card.rotation, {
+                        x: target.rot[0],
+                        y: target.rot[1],
+                        z: target.rot[2],
+                        duration: 1.4,
+                        delay: i * 0.045,
+                        ease: "power3.inOut"
+                    });
+                });
+            }
+
+            // Iniciar com a Cena 0
+            triggerScene(0);
+
+            // 6. Transição Automática a cada 6 segundos
+            let autoCycleTimer = setInterval(() => {
+                let next = (activeSceneIdx + 1) % 3;
+                triggerScene(next);
+            }, 6000);
+
+            // Ao clicar num botão, pausar o timer automático
+            window.triggerScene = function(idx) {
+                clearInterval(autoCycleTimer);
+                triggerScene(idx);
+                // Reiniciar o ciclo 10 segundos após interação manual
+                autoCycleTimer = setInterval(() => {
+                    let next = (activeSceneIdx + 1) % 3;
+                    triggerScene(next);
+                }, 7500);
+            };
+
+            // 7. Parallax Interativo com o Rato
             let mouseX = 0, mouseY = 0;
-            let targetX = 0, targetY = 0;
+            let targetCamX = 0, targetCamY = 0;
 
             window.addEventListener('mousemove', (e) => {
                 const rect = container.getBoundingClientRect();
@@ -236,30 +538,27 @@ def render_3d_hero():
                 mouseY = -((e.clientY - rect.top) / container.clientHeight - 0.5) * 2;
             });
 
-            // Loop de Animação 3D contínua
-            function animate() {
-                requestAnimationFrame(animate);
+            // 8. Loop de Renderização a 60 FPS
+            function render() {
+                requestAnimationFrame(render);
 
-                outerSphere.rotation.x += 0.003;
-                outerSphere.rotation.y += 0.005;
+                // Flutuação subtil contínua das partículas
+                particles.rotation.y += 0.0008;
 
-                innerCore.rotation.x -= 0.005;
-                innerCore.rotation.y -= 0.007;
+                // Amortecimento físico no movimento da câmara (Lerp)
+                const baseCam = sceneLayouts[activeSceneIdx].camPos;
+                targetCamX = baseCam[0] + mouseX * 0.65;
+                targetCamY = baseCam[1] + mouseY * 0.45;
 
-                particles.rotation.y += 0.001;
-
-                targetX += (mouseX * 1.2 - targetX) * 0.05;
-                targetY += (mouseY * 0.8 - targetY) * 0.05;
-
-                camera.position.x = targetX;
-                camera.position.y = targetY;
-                camera.lookAt(scene.position);
+                camera.position.x += (targetCamX - camera.position.x) * 0.05;
+                camera.position.y += (targetCamY - camera.position.y) * 0.05;
+                camera.lookAt(0, 0, 0);
 
                 renderer.render(scene, camera);
             }
-            animate();
+            render();
 
-            // Responsividade
+            // Responsividade no redimensionamento
             window.addEventListener('resize', () => {
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
@@ -269,7 +568,7 @@ def render_3d_hero():
     </body>
     </html>
     """
-    components.html(canvas_3d_code, height=305)
+    components.html(gallery_3d_code, height=435)
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
@@ -425,7 +724,7 @@ def exibir_tabela_precos():
 # ---------------- CABEÇALHO PRINCIPAL ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-blue">SAF-T Executive Analytics v2.5</span>
+    <span class="badge-pill badge-blue">SAF-T Executive Analytics v3.0</span>
     <h1 style="margin: 0; font-size: 28px; color: #f8fafc;">⚡ Plataforma de Inteligência e Auditoria SAF-T</h1>
     <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 15px;">
         Transforme ficheiros fiscais mensais num diagnóstico executivo de faturação, dependência de clientes e IVA.
@@ -435,10 +734,10 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL COM O GRÁFICO 3D FUTURÍSTICO ----------------
+# ---------------- CASO 1: PÁGINA INICIAL COM O MOTOR 3D THE STATE OF THE GALLERY ----------------
 if ficheiro_saft is None:
-    # GRÁFICO 3D ANIMADO NO TOPO DA PÁGINA INICIAL
-    render_3d_hero()
+    # GALERIA 3D COM TRANSIÇÃO DE CENA DA AWWWARDS
+    render_3d_gallery_transition()
 
     st.markdown("### Diagnóstico financeiro instantâneo em 3 pilares:")
     col_h1, col_h2, col_h3 = st.columns(3)
