@@ -5,6 +5,8 @@ import pandas as pd
 import urllib.parse
 import urllib.request
 import json
+import base64
+import os
 
 st.set_page_config(
     page_title="SAF-T Intelligence Pro | Plataforma Executiva B2B", 
@@ -13,10 +15,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- INJEÇÃO DO VÍDEO DE FUNDO ORIGINAL ----------------
-URL_VIDEO_FUNDO = "https://raw.githubusercontent.com/IM-Godoy/analisador-saft/main/background.mp4"
+# ---------------- LEITURA LOCAL DO VÍDEO EM BASE64 ----------------
+def obter_video_base64():
+    nome_ficheiro = "background.mp4"
+    if os.path.exists(nome_ficheiro):
+        with open(nome_ficheiro, "rb") as f:
+            dados = f.read()
+        return base64.b64encode(dados).decode("utf-8")
+    return None
 
-def injetar_fundo_video(url_video):
+def injetar_fundo_video():
+    b64_video = obter_video_base64()
+    
+    if not b64_video:
+        # Fallback de segurança se o ficheiro ainda estiver a sincronizar
+        st.warning("A carregar ficheiro de vídeo de fundo...")
+        return
+
     video_html = f"""
     <!DOCTYPE html>
     <html>
@@ -41,8 +56,7 @@ def injetar_fundo_video(url_video):
                 transform: translate(-50%, -50%);
                 z-index: -9999;
                 object-fit: cover;
-                /* Filtro de saturação e contraste para garantir legibilidade de alto padrão */
-                filter: brightness(0.60) contrast(1.18);
+                filter: brightness(0.65) contrast(1.15);
             }}
             .overlay-vignette {{
                 position: fixed;
@@ -51,23 +65,22 @@ def injetar_fundo_video(url_video):
                 width: 100vw;
                 height: 100vh;
                 z-index: -9998;
-                background: radial-gradient(circle at center, rgba(1, 3, 4, 0.25) 20%, rgba(1, 3, 4, 0.85) 100%);
+                background: radial-gradient(circle at center, rgba(1, 3, 4, 0.2) 20%, rgba(1, 3, 4, 0.85) 100%);
                 pointer-events: none;
             }}
         </style>
     </head>
     <body>
         <video class="video-background" autoplay loop muted playsinline id="bg-video">
-            <source src="{url_video}" type="video/mp4">
+            <source src="data:video/mp4;base64,{b64_video}" type="video/mp4">
         </video>
         <div class="overlay-vignette"></div>
         <script>
-            // Garantir reprodução imediata sem restrições de autoplay
             const v = document.getElementById('bg-video');
             if (v) {{
                 v.muted = true;
-                v.play().catch(function(err) {{
-                    console.log("Autoplay aguarda interação", err);
+                v.play().catch(function(e) {{
+                    console.log("Autoplay:", e);
                 }});
             }}
         </script>
@@ -76,12 +89,12 @@ def injetar_fundo_video(url_video):
     """
     components.html(video_html, height=0)
 
-injetar_fundo_video(URL_VIDEO_FUNDO)
+injetar_fundo_video()
 
 # ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
 st.markdown("""
     <style>
-    /* 1. Transparência Global para o vídeo preencher o ecrã inteiro */
+    /* 1. Transparência Global */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
         background: transparent !important;
     }
