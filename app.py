@@ -7,66 +7,93 @@ import urllib.request
 import json
 
 st.set_page_config(
-    page_title="SAF-T Intelligence Pro | Gestão Executiva", 
+    page_title="Analisador SAF-T | Igor - Junior Data Analyst", 
     page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- ESTILOS VISUAIS PREMIUM (DARK SAAS) ----------------
+# ---------------- ESTILOS VISUAIS TEMA TURQUESA & DARK ----------------
 st.markdown("""
     <style>
+    /* Fundo Global e Tipografia */
+    .stApp {
+        background-color: #06090c;
+        color: #f1f5f9;
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Cabeçalho Executivo */
     .main-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        border: 1px solid #334155;
+        background: linear-gradient(135deg, #091319 0%, #06090c 100%);
+        border: 1px solid rgba(0, 217, 217, 0.25);
         border-radius: 14px;
         padding: 24px;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
     }
+    
     .badge-pill {
         display: inline-block;
-        padding: 4px 12px;
+        padding: 5px 14px;
         font-size: 11px;
         font-weight: 700;
         border-radius: 9999px;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         margin-bottom: 8px;
     }
-    .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .badge-green { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
-    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-turquoise { 
+        background: rgba(0, 217, 217, 0.12); 
+        color: #00D9D9; 
+        border: 1px solid rgba(0, 217, 217, 0.35); 
+    }
+    .badge-amber { 
+        background: rgba(245, 158, 11, 0.15); 
+        color: #f59e0b; 
+        border: 1px solid rgba(245, 158, 11, 0.3); 
+    }
+    .badge-purple { 
+        background: rgba(168, 85, 247, 0.15); 
+        color: #c084fc; 
+        border: 1px solid rgba(168, 85, 247, 0.3); 
+    }
 
+    /* Cartões de Métricas com Destaque Turquesa */
     div[data-testid="stMetric"] {
-        background-color: #1e293b;
-        border: 1px solid #334155;
+        background-color: #0a1117;
+        border: 1px solid rgba(0, 217, 217, 0.2);
         padding: 16px;
         border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     div[data-testid="stMetricLabel"] p {
         color: #94a3b8 !important;
         font-size: 12px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     div[data-testid="stMetricValue"] div {
-        color: #f8fafc !important;
-        font-size: 22px !important;
+        color: #00D9D9 !important;
+        font-size: 24px !important;
         font-weight: 700;
+        text-shadow: 0 0 15px rgba(0, 217, 217, 0.25);
     }
 
     .hero-card {
-        background: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 12px;
+        background: #0a1117;
+        border: 1px solid rgba(0, 217, 217, 0.2);
+        border-radius: 14px;
         padding: 24px;
         height: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
+    /* Cartões de Planos / Preços */
     .pricing-card {
-        background: #1e293b;
-        border: 1px solid #334155;
+        background: #0a1117;
+        border: 1px solid rgba(0, 217, 217, 0.2);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -75,9 +102,9 @@ st.markdown("""
         justify-content: space-between;
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-        border: 2px solid #38bdf8;
-        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+        background: linear-gradient(180deg, #0d1a24 0%, #06090c 100%);
+        border: 2px solid #00D9D9;
+        box-shadow: 0 8px 30px rgba(0, 217, 217, 0.25);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
@@ -88,7 +115,7 @@ st.markdown("""
     .pricing-price {
         font-size: 32px;
         font-weight: 800;
-        color: #f8fafc;
+        color: #ffffff;
         margin: 12px 0 4px 0;
     }
     .pricing-sub {
@@ -109,466 +136,529 @@ st.markdown("""
         align-items: center;
     }
     .check-icon {
-        color: #22c55e;
+        color: #00D9D9;
         font-weight: bold;
         margin-right: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- COMPONENTE 3D AWWWARDS: THE STATE OF THE GALLERY ----------------
-def render_3d_gallery_transition():
-    gallery_3d_code = """
+# ---------------- HERO / LANDING PAGE 3D (AWWWARDS TURQUOISE ENGINE) ----------------
+def render_3d_hero_section():
+    landing_3d_html = """
     <!DOCTYPE html>
-    <html>
+    <html lang="pt">
     <head>
-        <meta charset="utf-8">
+        <meta charset="UTF-8">
         <style>
-            * { box-sizing: border-box; }
-            body { margin: 0; padding: 0; overflow: hidden; background: #07090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            #scene-wrap {
+            * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+            :root {
+                --primary: #00D9D9;
+                --primary-dark: #00A8A8;
+                --primary-glow: rgba(0, 217, 217, 0.45);
+                --bg-deep: #06090c;
+                --bg-card: rgba(10, 17, 23, 0.72);
+                --border-glass: rgba(0, 217, 217, 0.25);
+                --text-main: #f1f5f9;
+                --text-muted: #94a3b8;
+                --font-main: 'Poppins', -apple-system, sans-serif;
+            }
+            body {
                 width: 100%;
-                height: 420px;
+                height: 590px;
+                overflow: hidden;
+                background-color: var(--bg-deep);
+                color: var(--text-main);
+                font-family: var(--font-main);
                 position: relative;
                 border-radius: 16px;
-                background: radial-gradient(circle at 50% 30%, #172554 0%, #07090e 75%);
-                border: 1px solid #1e293b;
-                overflow: hidden;
-                box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+                border: 1px solid var(--border-glass);
             }
-            .hud-header {
+            #webgl-canvas {
                 position: absolute;
-                top: 16px;
-                left: 20px;
-                right: 20px;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                cursor: grab;
+            }
+            #webgl-canvas:active { cursor: grabbing; }
+
+            .ui-layer {
+                position: relative;
+                z-index: 2;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 24px 30px;
+                pointer-events: none;
+            }
+            .interactive { pointer-events: auto; }
+
+            header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                pointer-events: none;
-                z-index: 10;
+                width: 100%;
             }
-            .hud-badge {
-                font-size: 11px;
+            .brand-badge {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-glass);
+                padding: 7px 16px;
+                border-radius: 40px;
+                backdrop-filter: blur(12px);
+            }
+            .status-dot {
+                width: 8px;
+                height: 8px;
+                background-color: var(--primary);
+                border-radius: 50%;
+                box-shadow: 0 0 10px var(--primary);
+                animation: pulseGlow 2s infinite ease-in-out;
+            }
+            .brand-text {
+                font-size: 0.78rem;
                 font-weight: 700;
-                color: #38bdf8;
-                letter-spacing: 1.5px;
+                letter-spacing: 1.2px;
                 text-transform: uppercase;
-                background: rgba(15, 23, 42, 0.75);
-                border: 1px solid rgba(56, 189, 248, 0.35);
-                padding: 6px 14px;
+                color: var(--primary);
+            }
+            .location-badge {
+                background: var(--bg-card);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 7px 16px;
+                border-radius: 40px;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                backdrop-filter: blur(12px);
+            }
+            .location-badge span { color: var(--primary); }
+
+            .hero-container {
+                max-width: 820px;
+                margin-top: auto;
+                margin-bottom: auto;
+            }
+            .tag-pill {
+                display: inline-flex;
+                align-items: center;
+                background: rgba(0, 217, 217, 0.1);
+                border: 1px solid var(--border-glass);
+                color: var(--primary);
+                padding: 5px 14px;
                 border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                margin-bottom: 12px;
                 backdrop-filter: blur(8px);
             }
-            .hud-status {
-                font-size: 11px;
-                color: #94a3b8;
-                letter-spacing: 1px;
-                background: rgba(15, 23, 42, 0.6);
-                padding: 6px 12px;
-                border-radius: 20px;
-                border: 1px solid rgba(255,255,255,0.08);
+            h1.hero-title {
+                font-size: 3.2rem;
+                font-weight: 800;
+                line-height: 1.05;
+                letter-spacing: -1.2px;
+                margin-bottom: 8px;
+                background: linear-gradient(135deg, #ffffff 40%, var(--primary) 95%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 10px 40px rgba(0, 217, 217, 0.15);
             }
-            /* Botões de Transição de Cena (Estilo Awwwards) */
-            .scene-nav {
-                position: absolute;
-                bottom: 18px;
-                left: 50%;
-                transform: translateX(-50%);
+            h2.hero-subtitle {
+                font-size: 1.35rem;
+                font-weight: 600;
+                color: var(--primary);
+                margin-bottom: 12px;
+            }
+            p.hero-description {
+                font-size: 0.95rem;
+                line-height: 1.55;
+                color: var(--text-muted);
+                max-width: 650px;
+                margin-bottom: 24px;
+            }
+            .author-tag {
+                color: #ffffff;
+                font-weight: 600;
+                border-bottom: 1px dashed var(--primary);
+                padding-bottom: 2px;
+            }
+
+            .cta-group {
                 display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                align-items: center;
+            }
+            .btn {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
                 gap: 8px;
-                background: rgba(15, 23, 42, 0.85);
-                border: 1px solid #334155;
+                padding: 12px 26px;
+                border-radius: 10px;
+                font-size: 0.88rem;
+                font-weight: 600;
+                text-decoration: none;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                color: #031317;
+                box-shadow: 0 0 20px var(--primary-glow);
+                border: 1px solid var(--primary);
+            }
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 0 30px rgba(0, 217, 217, 0.7);
+                color: #000;
+            }
+            .btn-secondary {
+                background: var(--bg-card);
+                color: var(--text-main);
+                border: 1px solid var(--border-glass);
+                backdrop-filter: blur(14px);
+            }
+            .btn-secondary:hover {
+                transform: translateY(-2px);
+                background: rgba(0, 217, 217, 0.12);
+                border-color: var(--primary);
+                color: #ffffff;
+            }
+
+            footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                width: 100%;
+            }
+            .scene-selector {
+                display: flex;
+                gap: 6px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-glass);
                 padding: 5px 8px;
                 border-radius: 30px;
-                backdrop-filter: blur(12px);
-                z-index: 10;
+                backdrop-filter: blur(16px);
             }
             .scene-btn {
                 background: transparent;
                 border: none;
-                color: #94a3b8;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.8px;
-                padding: 8px 14px;
+                color: var(--text-muted);
+                font-size: 0.72rem;
+                font-weight: 700;
+                padding: 6px 14px;
                 border-radius: 20px;
                 cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                transition: all 0.3s ease;
             }
-            .scene-btn:hover {
-                color: #f8fafc;
-                background: rgba(255,255,255,0.06);
-            }
+            .scene-btn:hover { color: #fff; }
             .scene-btn.active {
-                background: #0284c7;
-                color: #ffffff;
-                box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+                background: var(--primary);
+                color: #041014;
+                box-shadow: 0 0 12px var(--primary-glow);
             }
-            canvas { display: block; width: 100%; height: 100%; cursor: grab; }
-            canvas:active { cursor: grabbing; }
+            .telemetry-tag {
+                font-size: 0.72rem;
+                color: #64748b;
+                letter-spacing: 0.8px;
+            }
+
+            @keyframes pulseGlow {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.4; transform: scale(0.85); }
+            }
+            @media (max-width: 768px) {
+                h1.hero-title { font-size: 2.2rem; }
+                .location-badge, .telemetry-tag { display: none; }
+                .scene-selector { width: 100%; justify-content: center; }
+            }
         </style>
-    </head>
-    <body>
-        <div id="scene-wrap">
-            <div class="hud-header">
-                <div class="hud-badge">● THE STATE OF THE GALLERY // 3D SCENE TRANSITION</div>
-                <div class="hud-status" id="hud-indicator">CENA 01 / 03 • MODO TÚNEL</div>
-            </div>
-
-            <div class="scene-nav">
-                <button class="scene-btn active" id="btn-0" onclick="triggerScene(0)">01 // TÚNEL PERSPECTIVA</button>
-                <button class="scene-btn" id="btn-1" onclick="triggerScene(1)">02 // SPOTLIGHT FOCUS</button>
-                <button class="scene-btn" id="btn-2" onclick="triggerScene(2)">03 // MATRIZ 3D</button>
-            </div>
-
-            <canvas id="stage"></canvas>
-        </div>
-
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    </head>
+    <body>
+        <canvas id="webgl-canvas"></canvas>
+
+        <div class="ui-layer">
+            <header>
+                <div class="brand-badge interactive">
+                    <div class="status-dot"></div>
+                    <div class="brand-text">SAF-T Intelligence 3D</div>
+                </div>
+                <div class="location-badge interactive">
+                    <span>📍</span> Aveiro, Portugal
+                </div>
+            </header>
+
+            <main class="hero-container">
+                <div class="tag-pill interactive">
+                    ⚡ Nova Dimensão em Auditoria Fiscal
+                </div>
+                <h1 class="hero-title">Analisador SAF-T</h1>
+                <h2 class="hero-subtitle">Análise de Ficheiros SAF-T Simplificada</h2>
+                <p class="hero-description">
+                    Importa, processa e analisa dados SAF-T com precisão | 
+                    <span class="author-tag">Igor - Junior Data Analyst</span>. 
+                    Visualização de faturação em tempo real, curva de concentração 80/20 e mapa fiscal de IVA.
+                </p>
+
+                <div class="cta-group">
+                    <a href="https://im-godoy-analisador-saft-app-xwvmax.streamlit.app/" target="_top" class="btn btn-primary interactive" id="cta-analyze">
+                        <span>Iniciar Análise</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                    </a>
+
+                    <a href="https://github.com/IM-Godoy/analisador-saft" target="_blank" class="btn btn-secondary interactive">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                        <span>Ver Código</span>
+                    </a>
+
+                    <a href="https://www.linkedin.com/in/im-godoy/" target="_blank" class="btn btn-secondary interactive" title="LinkedIn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        <span>LinkedIn</span>
+                    </a>
+                </div>
+            </main>
+
+            <footer>
+                <div class="telemetry-tag">TURQUOISE WEBGL ENGINE // 60 FPS</div>
+                <div class="scene-selector interactive">
+                    <button class="scene-btn active" id="btn-scene-0" onclick="setScene(0)">01 // TÚNEL ESPIRAL</button>
+                    <button class="scene-btn" id="btn-scene-1" onclick="setScene(1)">02 // VÓRTICE WARP</button>
+                    <button class="scene-btn" id="btn-scene-2" onclick="setScene(2)">03 // MATRIZ DATA-CORE</button>
+                </div>
+            </footer>
+        </div>
 
         <script>
-            const container = document.getElementById('scene-wrap');
-            const canvas = document.getElementById('stage');
-            const hudIndicator = document.getElementById('hud-indicator');
-
-            // 1. Criação da Cena e Câmara
+            const canvas = document.getElementById('webgl-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x07090e, 0.055);
+            scene.fog = new THREE.FogExp2(0x06090c, 0.045);
 
-            const camera = new THREE.PerspectiveCamera(46, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 0, 7.5);
+            const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 6.8);
 
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // 2. Partículas Cósmicas / Luzes no Espaço
-            const pCount = 280;
+            // Partículas Turquesa em Vórtice
+            const pCount = 1200;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
-            for(let i = 0; i < pCount * 3; i += 3) {
-                pPos[i] = (Math.random() - 0.5) * 22;
-                pPos[i+1] = (Math.random() - 0.5) * 14;
-                pPos[i+2] = (Math.random() - 0.5) * 16;
+            const pSpeeds = new Float32Array(pCount);
+
+            for (let i = 0; i < pCount * 3; i += 3) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2.0 + Math.random() * 6.0;
+                pPos[i] = Math.cos(angle) * radius;
+                pPos[i + 1] = Math.sin(angle) * radius;
+                pPos[i + 2] = (Math.random() - 0.5) * 45;
+                pSpeeds[i / 3] = 0.04 + Math.random() * 0.08;
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+
             const pMat = new THREE.PointsMaterial({
-                color: 0x38bdf8,
-                size: 0.05,
+                color: 0x00D9D9,
+                size: 0.045,
                 transparent: true,
-                opacity: 0.75
+                opacity: 0.75,
+                blending: THREE.AdditiveBlending
             });
             const particles = new THREE.Points(pGeo, pMat);
             scene.add(particles);
 
-            // 3. Gerador Dinâmico de Texturas de Cartões (Dark Glass UI)
-            function makeCardCanvas(badge, title, mainVal, subText, visualType) {
+            // Anéis da Espiral / Túnel
+            const ringsGroup = new THREE.Group();
+            const ringGeo = new THREE.RingGeometry(3.1, 3.16, 8);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x00A8A8,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.35,
+                side: THREE.DoubleSide
+            });
+
+            for (let i = 0; i < 26; i++) {
+                const ring = new THREE.Mesh(ringGeo, ringMat.clone());
+                const zPos = -i * 1.5 + 4;
+                const sAngle = i * 0.28;
+                ring.position.set(Math.cos(sAngle) * 0.7, Math.sin(sAngle) * 0.7, zPos);
+                ring.rotation.z = sAngle;
+                ringsGroup.add(ring);
+            }
+            scene.add(ringsGroup);
+
+            // Texturas Dinâmicas para os Cartões 3D
+            function createCardTexture(title, val, sub) {
                 const cv = document.createElement('canvas');
                 cv.width = 512;
-                cv.height = 320;
+                cv.height = 280;
                 const ctx = cv.getContext('2d');
 
-                // Fundo gradiente escuro de luxo
-                const bgGrad = ctx.createLinearGradient(0, 0, 512, 320);
-                bgGrad.addColorStop(0, '#0f172a');
-                bgGrad.addColorStop(1, '#020617');
-                ctx.fillStyle = bgGrad;
-                ctx.fillRect(0, 0, 512, 320);
+                ctx.fillStyle = '#081017';
+                ctx.fillRect(0, 0, 512, 280);
 
-                // Moldura brilhante
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(3, 3, 506, 314);
+                ctx.strokeStyle = '#00D9D9';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(3, 3, 506, 274);
 
-                // Badge no topo
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+                ctx.fillStyle = 'rgba(0, 217, 217, 0.15)';
                 ctx.fillRect(28, 24, 180, 32);
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(28, 24, 180, 32);
+                ctx.fillStyle = '#00D9D9';
+                ctx.font = 'bold 13px Poppins, sans-serif';
+                ctx.fillText("SAF-T AUDIT CORE", 38, 46);
 
-                ctx.fillStyle = '#38bdf8';
-                ctx.font = 'bold 12px -apple-system, sans-serif';
-                ctx.fillText(badge, 40, 45);
-
-                // Título
                 ctx.fillStyle = '#94a3b8';
-                ctx.font = '14px -apple-system, sans-serif';
-                ctx.fillText(title, 28, 92);
+                ctx.font = '16px Poppins, sans-serif';
+                ctx.fillText(title, 28, 96);
 
-                // Valor Principal em Destaque
-                ctx.fillStyle = '#f8fafc';
-                ctx.font = 'bold 36px -apple-system, sans-serif';
-                ctx.fillText(mainVal, 28, 140);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 44px Poppins, sans-serif';
+                ctx.fillText(val, 28, 155);
 
-                // Subtítulo
-                ctx.fillStyle = '#38bdf8';
-                ctx.font = '13px -apple-system, sans-serif';
-                ctx.fillText(subText, 28, 172);
+                ctx.fillStyle = '#00D9D9';
+                ctx.font = '14px Poppins, sans-serif';
+                ctx.fillText(sub, 28, 195);
 
-                // Gráfico embutido no cartão
-                if(visualType === 'curve') {
-                    ctx.strokeStyle = '#38bdf8';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.moveTo(28, 260);
-                    ctx.bezierCurveTo(140, 290, 220, 205, 330, 240);
-                    ctx.bezierCurveTo(390, 255, 430, 190, 484, 195);
-                    ctx.stroke();
+                ctx.strokeStyle = '#00D9D9';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(28, 235);
+                ctx.bezierCurveTo(150, 260, 280, 200, 484, 215);
+                ctx.stroke();
 
-                    ctx.lineTo(484, 295);
-                    ctx.lineTo(28, 295);
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.09)';
-                    ctx.fill();
-                } else if(visualType === 'pareto') {
-                    const bars = [0.85, 0.58, 0.32, 0.18];
-                    const colors = ['#38bdf8', '#818cf8', '#c084fc', '#64748b'];
-                    bars.forEach((b, idx) => {
-                        ctx.fillStyle = colors[idx];
-                        ctx.fillRect(28 + idx * 56, 290 - b * 90, 40, b * 90);
-                    });
-                } else if(visualType === 'donut') {
-                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-                    ctx.lineWidth = 12;
-                    ctx.beginPath();
-                    ctx.arc(420, 230, 42, 0, Math.PI * 2);
-                    ctx.stroke();
+                return new THREE.CanvasTexture(cv);
+            }
 
-                    ctx.strokeStyle = '#a855f7';
-                    ctx.lineWidth = 12;
-                    ctx.beginPath();
-                    ctx.arc(420, 230, 42, -Math.PI / 2, Math.PI * 0.9);
-                    ctx.stroke();
-                } else if(visualType === 'wave') {
-                    ctx.strokeStyle = '#22c55e';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.moveTo(28, 250);
-                    ctx.lineTo(140, 250);
-                    ctx.lineTo(170, 200);
-                    ctx.lineTo(210, 280);
-                    ctx.lineTo(250, 225);
-                    ctx.lineTo(290, 250);
-                    ctx.lineTo(484, 250);
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = 'rgba(148, 163, 184, 0.2)';
-                    for(let r = 0; r < 3; r++) {
-                        ctx.fillRect(28, 215 + r * 25, 456, 12);
+            const cardsData = [
+                { t: "Faturação Líquida", v: "650.420 €", s: "Processamento XML instantâneo" },
+                { t: "Curva ABC (Pareto)", v: "80% Receita", s: "Top 3 Clientes Críticos" },
+                { t: "Auditoria Fiscal IVA", v: "23% • 13% • 6%", s: "Conferência automática por taxa" },
+                { t: "Segurança de Dados", v: "100% In-Memory", s: "Sem gravação externa (RGPD)" }
+            ];
+
+            const cardsMeshes = [];
+            const cardGeo = new THREE.PlaneGeometry(2.5, 1.4);
+
+            cardsData.forEach((d, idx) => {
+                const mat = new THREE.MeshBasicMaterial({
+                    map: createCardTexture(d.t, d.v, d.s),
+                    transparent: true,
+                    opacity: 0.92,
+                    side: THREE.DoubleSide
+                });
+                const mesh = new THREE.Mesh(cardGeo, mat);
+                const prog = (idx / cardsData.length) * Math.PI * 2;
+                mesh.position.set(Math.cos(prog) * 2.8, Math.sin(prog) * 1.5, -idx * 3.5 + 2);
+                mesh.rotation.y = -Math.cos(prog) * 0.3;
+                scene.add(mesh);
+                cardsMeshes.push(mesh);
+            });
+
+            // 3 Cenas Awwwards
+            const scenes = [
+                { cam: { x: 0, y: 0, z: 6.8 }, rot: { x: 0, y: 0, z: 0 } },
+                { cam: { x: 0, y: 0.4, z: 2.2 }, rot: { x: -0.15, y: 0.25, z: 0.1 } },
+                { cam: { x: -1.8, y: 2.5, z: 4.8 }, rot: { x: -0.45, y: -0.3, z: -0.15 } }
+            ];
+
+            let activeScene = 0;
+            function setScene(idx) {
+                activeScene = idx;
+                const target = scenes[idx];
+
+                for (let i = 0; i < 3; i++) {
+                    const btn = document.getElementById('btn-scene-' + i);
+                    if (btn) {
+                        if (i === idx) btn.classList.add('active');
+                        else btn.classList.remove('active');
                     }
                 }
 
-                const tex = new THREE.CanvasTexture(cv);
-                tex.generateMipmaps = true;
-                return tex;
-            }
-
-            // 4. Criação dos 5 Cartões 3D
-            const cardData = [
-                { badge: "FATURAÇÃO LÍQUIDA", title: "Ritmo de Receita Diário", val: "650.420 €", sub: "+18.4% vs mês homólogo", type: "curve" },
-                { badge: "CURVA ABC // 80-20", title: "Concentração Estratégica", val: "3 Clientes Top", sub: "78.4% do volume de negócios", type: "pareto" },
-                { badge: "AUDITORIA FISCAL", title: "Apuramento por Taxa", val: "23% • 13% • 6%", sub: "Conferência automática de IVA", type: "donut" },
-                { badge: "QUALIDADE OPERACIONAL", title: "Taxa de Devoluções (NC)", val: "2.1% Anulado", sub: "Dentro dos padrões ótimos", type: "wave" },
-                { badge: "RELATÓRIO EXECUTIVO", title: "Diagnóstico para Decisores", val: "1-Click PDF", sub: "Pronto para apresentar à gerência", type: "doc" }
-            ];
-
-            const cards = [];
-            const cardGeo = new THREE.PlaneGeometry(3.0, 1.85);
-
-            cardData.forEach((d, i) => {
-                const group = new THREE.Group();
-
-                // Cartão frontal
-                const matFront = new THREE.MeshBasicMaterial({
-                    map: makeCardCanvas(d.badge, d.title, d.val, d.sub, d.type),
-                    transparent: true,
-                    opacity: 0.96,
-                    side: THREE.DoubleSide
-                });
-                const meshFront = new THREE.Mesh(cardGeo, matFront);
-                group.add(meshFront);
-
-                // Placa traseira em vidro escuro
-                const matBack = new THREE.MeshBasicMaterial({
-                    color: 0x070d1a,
-                    transparent: true,
-                    opacity: 0.85,
-                    side: THREE.DoubleSide
-                });
-                const meshBack = new THREE.Mesh(cardGeo, matBack);
-                meshBack.position.z = -0.02;
-                group.add(meshBack);
-
-                // Bordas luminosas com EdgesGeometry
-                const edges = new THREE.EdgesGeometry(cardGeo);
-                const line = new THREE.LineSegments(
-                    edges, 
-                    new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
-                );
-                group.add(line);
-
-                scene.add(group);
-                cards.push(group);
-            });
-
-            // 5. Configuração das 3 Cenas (Awwwards Scene Layouts)
-            const sceneLayouts = [
-                // CENA 0: TÚNEL PERSPECTIVA (O visual icónico de 'The State of the Gallery')
-                {
-                    name: "CENA 01 / 03 • MODO TÚNEL",
-                    camPos: [0, 0, 7.5],
-                    cards: [
-                        { pos: [-4.2, 0.5, -0.2], rot: [0.08, 0.45, -0.05] },
-                        { pos: [-2.1, -0.3, 1.4], rot: [0.04, 0.25, -0.02] },
-                        { pos: [0.2, 0.3, 2.5], rot: [-0.04, -0.06, 0.01] }, // Centro em destaque
-                        { pos: [2.5, -0.3, 1.2], rot: [0.03, -0.32, 0.02] },
-                        { pos: [4.6, 0.5, -0.4], rot: [0.07, -0.52, 0.06] }
-                    ]
-                },
-                // CENA 1: SPOTLIGHT DEEP FOCUS (Voo da câmara em direção ao núcleo)
-                {
-                    name: "CENA 02 / 03 • SPOTLIGHT FOCUS",
-                    camPos: [0, 0.2, 5.2],
-                    cards: [
-                        { pos: [-4.8, 2.2, -2.0], rot: [0.25, 0.45, -0.1] },
-                        { pos: [-4.2, -2.0, -1.5], rot: [-0.2, 0.35, 0.1] },
-                        { pos: [0.0, 0.0, 2.8], rot: [0.0, 0.0, 0.0] }, // Em plano direto na lente
-                        { pos: [4.2, -2.0, -1.5], rot: [-0.2, -0.35, -0.1] },
-                        { pos: [4.8, 2.2, -2.0], rot: [0.25, -0.45, 0.1] }
-                    ]
-                },
-                // CENA 2: MATRIZ HOLO-DECK 3D (Vista arquitetural isométrica)
-                {
-                    name: "CENA 03 / 03 • MATRIZ 3D",
-                    camPos: [0, 2.8, 6.6],
-                    cards: [
-                        { pos: [-3.4, 1.4, 0.6], rot: [-0.38, 0.24, 0.06] },
-                        { pos: [0.0, 1.4, 0.6], rot: [-0.38, 0.0, 0.0] },
-                        { pos: [3.4, 1.4, 0.6], rot: [-0.38, -0.24, -0.06] },
-                        { pos: [-1.8, -1.3, 1.5], rot: [-0.38, 0.12, 0.03] },
-                        { pos: [1.8, -1.3, 1.5], rot: [-0.38, -0.12, -0.03] }
-                    ]
-                }
-            ];
-
-            let activeSceneIdx = 0;
-
-            // Função principal de Transição Cinematográfica com GSAP
-            function triggerScene(index) {
-                activeSceneIdx = index;
-                const layout = sceneLayouts[index];
-
-                hudIndicator.innerText = layout.name;
-
-                // Atualizar estilo visual dos botões
-                for(let b = 0; b < 3; b++) {
-                    const btn = document.getElementById('btn-' + b);
-                    if(b === index) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                }
-
-                // Efeito Warp nas partículas
-                gsap.to(particles.rotation, {
-                    y: particles.rotation.y + Math.PI * 0.45,
-                    duration: 1.4,
-                    ease: "power2.inOut"
-                });
-
-                // Transição da Câmara
                 gsap.to(camera.position, {
-                    x: layout.camPos[0],
-                    y: layout.camPos[1],
-                    z: layout.camPos[2],
-                    duration: 1.5,
-                    ease: "power3.inOut"
+                    x: target.cam.x, y: target.cam.y, z: target.cam.z,
+                    duration: 1.8, ease: "power3.inOut"
+                });
+                gsap.to(camera.rotation, {
+                    x: target.rot.x, y: target.rot.y, z: target.rot.z,
+                    duration: 1.8, ease: "power3.inOut"
                 });
 
-                // Animação individual dos cartões com efeito dominó (Stagger)
-                cards.forEach((card, i) => {
-                    const target = layout.cards[i];
-
-                    gsap.to(card.position, {
-                        x: target.pos[0],
-                        y: target.pos[1],
-                        z: target.pos[2],
-                        duration: 1.4,
-                        delay: i * 0.045,
-                        ease: "power3.inOut"
-                    });
-
-                    gsap.to(card.rotation, {
-                        x: target.rot[0],
-                        y: target.rot[1],
-                        z: target.rot[2],
-                        duration: 1.4,
-                        delay: i * 0.045,
-                        ease: "power3.inOut"
+                cardsMeshes.forEach((mesh, i) => {
+                    gsap.to(mesh.rotation, {
+                        z: mesh.rotation.z + Math.PI * 0.5,
+                        duration: 1.4, delay: i * 0.05, ease: "power2.inOut"
                     });
                 });
             }
 
-            // Iniciar com a Cena 0
-            triggerScene(0);
+            let autoTimer = setInterval(() => {
+                setScene((activeScene + 1) % 3);
+            }, 8000);
 
-            // 6. Transição Automática a cada 6 segundos
-            let autoCycleTimer = setInterval(() => {
-                let next = (activeSceneIdx + 1) % 3;
-                triggerScene(next);
-            }, 6000);
-
-            // Ao clicar num botão, pausar o timer automático
-            window.triggerScene = function(idx) {
-                clearInterval(autoCycleTimer);
-                triggerScene(idx);
-                // Reiniciar o ciclo 10 segundos após interação manual
-                autoCycleTimer = setInterval(() => {
-                    let next = (activeSceneIdx + 1) % 3;
-                    triggerScene(next);
-                }, 7500);
+            window.setScene = function(idx) {
+                clearInterval(autoTimer);
+                setScene(idx);
+                autoTimer = setInterval(() => {
+                    setScene((activeScene + 1) % 3);
+                }, 10000);
             };
 
-            // 7. Parallax Interativo com o Rato
-            let mouseX = 0, mouseY = 0;
-            let targetCamX = 0, targetCamY = 0;
-
+            // Parallax Rato
+            let mouseX = 0, mouseY = 0, tX = 0, tY = 0;
             window.addEventListener('mousemove', (e) => {
-                const rect = container.getBoundingClientRect();
-                mouseX = ((e.clientX - rect.left) / container.clientWidth - 0.5) * 2;
-                mouseY = -((e.clientY - rect.top) / container.clientHeight - 0.5) * 2;
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
             });
 
-            // 8. Loop de Renderização a 60 FPS
-            function render() {
-                requestAnimationFrame(render);
+            // Loop 60 FPS
+            function animate() {
+                requestAnimationFrame(animate);
+                const pos = particles.geometry.attributes.position.array;
+                for (let i = 0; i < pCount * 3; i += 3) {
+                    pos[i + 2] += pSpeeds[i / 3];
+                    if (pos[i + 2] > 7.5) pos[i + 2] = -35;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.rotation.z += 0.001;
 
-                // Flutuação subtil contínua das partículas
-                particles.rotation.y += 0.0008;
+                ringsGroup.children.forEach((r, idx) => {
+                    r.rotation.z += 0.003 * (idx % 2 === 0 ? 1 : -1);
+                });
 
-                // Amortecimento físico no movimento da câmara (Lerp)
-                const baseCam = sceneLayouts[activeSceneIdx].camPos;
-                targetCamX = baseCam[0] + mouseX * 0.65;
-                targetCamY = baseCam[1] + mouseY * 0.45;
+                tX += (mouseX * 0.5 - tX) * 0.05;
+                tY += (mouseY * 0.35 - tY) * 0.05;
 
-                camera.position.x += (targetCamX - camera.position.x) * 0.05;
-                camera.position.y += (targetCamY - camera.position.y) * 0.05;
-                camera.lookAt(0, 0, 0);
+                const base = scenes[activeScene].cam;
+                camera.position.x = base.x + tX;
+                camera.position.y = base.y + tY;
 
                 renderer.render(scene, camera);
             }
-            render();
+            animate();
 
-            // Responsividade no redimensionamento
             window.addEventListener('resize', () => {
-                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setSize(window.innerWidth, window.innerHeight);
             });
         </script>
     </body>
     </html>
     """
-    components.html(gallery_3d_code, height=435)
+    components.html(landing_3d_html, height=605)
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
@@ -654,7 +744,7 @@ def processar_saft_completo(xml_bytes):
 
 def exibir_tabela_precos():
     st.markdown("### 💎 Planos de Acompanhamento Mensal")
-    st.markdown("Gostou do diagnóstico? Disponibilizamos acompanhamento contínuo para a sua empresa ou para toda a carteira do seu gabinete:")
+    st.markdown("Preços transparentes para empresas individuais e gabinetes de contabilidade:")
     
     col_p1, col_p2, col_p3 = st.columns(3)
 
@@ -662,8 +752,8 @@ def exibir_tabela_precos():
         st.markdown("""
         <div class="pricing-card">
             <div>
-                <span class="badge-pill badge-blue">Diagnóstico</span>
-                <h3 style="margin: 0; color: #f8fafc;">Acesso Gratuito</h3>
+                <span class="badge-pill badge-turquoise">Diagnóstico</span>
+                <h3 style="margin: 0; color: #ffffff;">Acesso Gratuito</h3>
                 <div class="pricing-price">0 €</div>
                 <div class="pricing-sub">Para testes individuais pontuais</div>
                 <ul class="feature-list">
@@ -681,8 +771,8 @@ def exibir_tabela_precos():
         st.markdown("""
         <div class="pricing-card">
             <div>
-                <span class="badge-pill badge-green">Empresas</span>
-                <h3 style="margin: 0; color: #f8fafc;">PME Gestão</h3>
+                <span class="badge-pill badge-turquoise">Empresas</span>
+                <h3 style="margin: 0; color: #ffffff;">PME Gestão</h3>
                 <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Acompanhamento executivo mensal</div>
                 <ul class="feature-list">
@@ -704,8 +794,8 @@ def exibir_tabela_precos():
         <div class="pricing-card-featured">
             <div>
                 <span class="badge-pill badge-purple">⭐ Mais Escolhido</span>
-                <h3 style="margin: 0; color: #f8fafc;">Gabinete Pro</h3>
-                <div class="pricing-price">79 € <span style="font-size: 15px; color: #38bdf8; font-weight: normal;">/mês</span></div>
+                <h3 style="margin: 0; color: #ffffff;">Gabinete Pro</h3>
+                <div class="pricing-price">79 € <span style="font-size: 15px; color: #00D9D9; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Para Gabinetes de Contabilidade & TOCs</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b></li>
@@ -721,13 +811,13 @@ def exibir_tabela_precos():
         url_gab = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_gab)}"
         st.link_button("⭐ Aderir ao Gabinete Pro (79€)", url_gab, type="primary", use_container_width=True)
 
-# ---------------- CABEÇALHO PRINCIPAL ----------------
+# ---------------- CABEÇALHO SUPERIOR DA APLICAÇÃO ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-blue">SAF-T Executive Analytics v3.0</span>
-    <h1 style="margin: 0; font-size: 28px; color: #f8fafc;">⚡ Plataforma de Inteligência e Auditoria SAF-T</h1>
-    <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 15px;">
-        Transforme ficheiros fiscais mensais num diagnóstico executivo de faturação, dependência de clientes e IVA.
+    <span class="badge-pill badge-turquoise">SAF-T Intelligence 3D • Aveiro, PT</span>
+    <h1 style="margin: 0; font-size: 28px; color: #ffffff;">⚡ Analisador SAF-T | Diagnóstico Executivo</h1>
+    <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 14px;">
+        Importa, processa e analisa dados SAF-T com precisão | Por Igor - Junior Data Analyst
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -736,19 +826,20 @@ ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.x
 
 # ---------------- CASO 1: PÁGINA INICIAL COM O MOTOR 3D THE STATE OF THE GALLERY ----------------
 if ficheiro_saft is None:
-    # GALERIA 3D COM TRANSIÇÃO DE CENA DA AWWWARDS
-    render_3d_gallery_transition()
+    # AWWWARDS 3D SCENE TRANSITION TURQUOISE ENGINE
+    render_3d_hero_section()
 
-    st.markdown("### Diagnóstico financeiro instantâneo em 3 pilares:")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### Pilares de Auditoria e Inteligência:")
     col_h1, col_h2, col_h3 = st.columns(3)
 
     with col_h1:
         st.markdown("""
         <div class="hero-card">
-            <span class="badge-pill badge-green">Segurança Máxima</span>
-            <h3 style="margin-top: 5px; color: #f8fafc;">🔒 100% Confidencial</h3>
-            <p style="color: #94a3b8; font-size: 14px;">
-                Os ficheiros são processados exclusivamente na memória volátil durante a sessão. Nenhum dado fiscal, cliente ou valor é gravado em servidores ou bases de dados externas.
+            <span class="badge-pill badge-turquoise">Segurança Máxima</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory (RGPD)</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+                Os dados fiscais e listas de faturas são processados exclusivamente na memória volátil da sessão. Nenhum valor de faturação é gravado em bases de dados externas.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -756,10 +847,10 @@ if ficheiro_saft is None:
     with col_h2:
         st.markdown("""
         <div class="hero-card">
-            <span class="badge-pill badge-blue">Gestão Estratégica</span>
-            <h3 style="margin-top: 5px; color: #f8fafc;">📊 Curva ABC & Risco 80/20</h3>
-            <p style="color: #94a3b8; font-size: 14px;">
-                Descubra instantaneamente quais os clientes críticos que asseguram 80% do fluxo de caixa e identifique a concentração de risco comercial.
+            <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+                Descobre instantaneamente os clientes Classe A que garantem 80% do fluxo de caixa e obtém alertas preventivos de risco de tesouraria.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -768,22 +859,20 @@ if ficheiro_saft is None:
         st.markdown("""
         <div class="hero-card">
             <span class="badge-pill badge-amber">Conferência Fiscal</span>
-            <h3 style="margin-top: 5px; color: #f8fafc;">⚖️ Auditoria de IVA</h3>
-            <p style="color: #94a3b8; font-size: 14px;">
-                Resumo instantâneo de faturas emitidas vs. notas de crédito, com desdobramento por taxas normal (23%), intermédia, reduzida e isenções.
+            <h3 style="margin-top: 8px; color: #ffffff;">⚖️ Auditoria de IVA</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
+                Resumo instantâneo de faturas emitidas vs. notas de crédito, com conferência por taxas normal (23%), intermédia, reduzida e isenções.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.info("👆 **Comece já:** Selecione ou arraste um ficheiro SAF-T (.xml) acima para ver o diagnóstico completo.")
-
-# ---------------- CASO 2: FICHEIRO CARREGADO COM SUCESSO ----------------
+# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO ----------------
 else:
     try:
         bytes_data = ficheiro_saft.read()
         df, df_tax = processar_saft_completo(bytes_data)
 
-        # Cálculos Globais
+        # Métricas Globais
         faturas_positivas = df[df['Tipo'] != 'NC']
         notas_credito = df[df['Tipo'] == 'NC']
 
@@ -847,7 +936,7 @@ else:
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df_diario = df.groupby(df['Data_dt'].dt.date)['ValorBruto'].sum().reset_index()
             df_diario.columns = ['Data', 'Faturação Diária (€)']
-            st.line_chart(df_diario.set_index('Data'), color="#38bdf8")
+            st.line_chart(df_diario.set_index('Data'), color="#00D9D9")
 
         # TAB 2: CURVA ABC
         with tab_abc:
@@ -881,7 +970,7 @@ else:
             col_abc_chart, col_abc_table = st.columns([1.2, 1])
             with col_abc_chart:
                 st.subheader("Top Clientes da Carteira")
-                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#38bdf8")
+                st.bar_chart(df_abc.head(10).set_index('Cliente')['ValorBruto'], horizontal=True, color="#00D9D9")
 
             with col_abc_table:
                 st.subheader("Detetor Estratégico")
@@ -946,7 +1035,7 @@ else:
             <body>
                 <div class="card">
                     <h2>Relatório Executivo de Gestão & Faturação</h2>
-                    <p style="color: #64748b; font-size: 13px;">Auditoria Automatizada via SAF-T</p>
+                    <p style="color: #64748b; font-size: 13px;">Auditoria Automatizada via SAF-T | Analisador SAF-T</p>
                     <div class="kpis">
                         <div class="kpi"><h4>Faturação Líquida</h4><p>{fat_liquida:,.2f} €</p></div>
                         <div class="kpi"><h4>Ticket Médio</h4><p>{ticket_medio:,.2f} €</p></div>
@@ -1027,7 +1116,7 @@ else:
                 st.write("Fale diretamente connosco para tirar dúvidas ou solicitar integração para a sua carteira:")
                 
                 numero_whatsapp = "351935009099" 
-                msg_whats_geral = "Olá! Estive a testar a plataforma SAF-T Intelligence Pro e gostaria de tirar algumas dúvidas sobre os planos."
+                msg_whats_geral = "Olá! Estive a testar a plataforma Analisador SAF-T e gostaria de tirar algumas dúvidas sobre os planos."
                 url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(msg_whats_geral)}"
                 
                 st.link_button("💬 Abrir Conversa no WhatsApp", url_whatsapp, type="primary", use_container_width=True)
