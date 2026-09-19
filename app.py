@@ -24,8 +24,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------- MOTOR 3D: TÚNEL ESPIRAL ULTRA-SUAVE (FUNDO GLOBAL) ----------------
-def injetar_fundo_tunel_suave():
+# ---------------- MOTOR 3D: TÚNEL HIPER-IMERSIVO (EXCLUSIVO PARA A PÁGINA INICIAL) ----------------
+def injetar_fundo_tunel_imersivo():
     tunel_html = """
     <!DOCTYPE html>
     <html>
@@ -43,19 +43,20 @@ def injetar_fundo_tunel_suave():
         <script>
             const canvas = document.getElementById('bg-canvas');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030609, 0.04);
+            scene.fog = new THREE.FogExp2(0x030609, 0.035);
 
-            const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.z = 5.0;
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 4.0;
 
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            const ringCount = 44;
+            // Anéis estruturais do túnel imersivo
+            const ringCount = 60;
             const rings = [];
-            const sides = 8;
-            const radius = 3.6;
+            const sides = 6;
+            const radius = 4.2;
             const ringPts = [];
 
             for (let s = 0; s <= sides; s++) {
@@ -65,38 +66,39 @@ def injetar_fundo_tunel_suave():
             const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
 
             for (let i = 0; i < ringCount; i++) {
-                const isBright = (i % 2 === 0);
+                const isAccent = (i % 3 === 0);
                 const ringMat = new THREE.LineBasicMaterial({
-                    color: isBright ? 0x00D9D9 : 0x008b8b,
+                    color: isAccent ? 0xa855f7 : 0x00D9D9,
                     transparent: true,
-                    opacity: isBright ? 0.30 : 0.15
+                    opacity: isAccent ? 0.45 : 0.20
                 });
                 const ring = new THREE.Line(ringGeo, ringMat);
-                ring.position.z = -i * 1.5;
+                ring.position.z = -i * 1.2;
                 scene.add(ring);
                 rings.push(ring);
             }
 
-            const pCount = 950;
+            // Campo estelar / Partículas de alta densidade em movimento
+            const pCount = 1800;
             const pGeo = new THREE.BufferGeometry();
             const pPos = new Float32Array(pCount * 3);
             const pSpeed = new Float32Array(pCount);
 
             for (let i = 0; i < pCount * 3; i += 3) {
                 const angle = Math.random() * Math.PI * 2;
-                const r = 1.9 + Math.random() * 4.8;
+                const r = 0.5 + Math.random() * 5.5;
                 pPos[i] = Math.cos(angle) * r;
                 pPos[i+1] = Math.sin(angle) * r;
-                pPos[i+2] = -Math.random() * 65;
-                pSpeed[i/3] = 0.005 + Math.random() * 0.008;
+                pPos[i+2] = -Math.random() * 80;
+                pSpeed[i/3] = 0.015 + Math.random() * 0.025;
             }
             pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
             const pMat = new THREE.PointsMaterial({
                 color: 0x00D9D9,
-                size: 0.040,
+                size: 0.055,
                 transparent: true,
-                opacity: 0.65,
+                opacity: 0.85,
                 blending: THREE.AdditiveBlending
             });
             const particles = new THREE.Points(pGeo, pMat);
@@ -105,33 +107,36 @@ def injetar_fundo_tunel_suave():
             let time = 0;
             function animate() {
                 requestAnimationFrame(animate);
-                time += 0.0008;
+                time += 0.0012;
 
+                // Movimento dinâmico dos anéis em espiral
                 for (let i = 0; i < ringCount; i++) {
                     const r = rings[i];
-                    r.position.z += 0.007;
-                    if (r.position.z > 6.0) {
-                        r.position.z = -ringCount * 1.5 + 6.0;
+                    r.position.z += 0.018;
+                    if (r.position.z > 5.0) {
+                        r.position.z = -ringCount * 1.2 + 5.0;
                     }
                     const pz = r.position.z;
-                    r.position.x = Math.sin(pz * 0.08 + time) * 1.0;
-                    r.position.y = Math.cos(pz * 0.08 + time) * 1.0;
-                    r.rotation.z = pz * 0.1 + time * 0.02;
+                    r.position.x = Math.sin(pz * 0.06 + time) * 1.2;
+                    r.position.y = Math.cos(pz * 0.06 + time) * 1.2;
+                    r.rotation.z = pz * 0.12 + time * 0.05;
                 }
 
+                // Fluxo contínuo de partículas
                 const pos = particles.geometry.attributes.position.array;
                 for (let i = 0; i < pCount * 3; i += 3) {
                     pos[i+2] += pSpeed[i/3];
-                    if (pos[i+2] > 6.0) {
-                        pos[i+2] = -65;
+                    if (pos[i+2] > 5.0) {
+                        pos[i+2] = -80;
                     }
                 }
                 particles.geometry.attributes.position.needsUpdate = true;
-                particles.rotation.z += 0.0001;
+                particles.rotation.z += 0.0003;
 
-                camera.position.x = Math.sin(time * 0.2) * 0.18;
-                camera.position.y = Math.cos(time * 0.15) * 0.14;
-                camera.rotation.z = Math.sin(time * 0.1) * 0.015;
+                // Movimento imersivo da câmara
+                camera.position.x = Math.sin(time * 0.25) * 0.35;
+                camera.position.y = Math.cos(time * 0.2) * 0.30;
+                camera.rotation.z = Math.sin(time * 0.15) * 0.03;
 
                 renderer.render(scene, camera);
             }
@@ -148,16 +153,13 @@ def injetar_fundo_tunel_suave():
     """
     components.html(tunel_html, height=0)
 
-injetar_fundo_tunel_suave()
-
-# ---------------- ESTILOS VISUAIS: CORPORATIVO ----------------
+# ---------------- ESTILOS VISUAIS: CORPORATIVO E ESTÁTICO APÓS UPLOAD ----------------
 st.markdown("""
     <style>
     html, body, .stApp, [data-testid="stAppViewContainer"], .main {
-        background: transparent !important;
+        background-color: #030609 !important;
     }
     body {
-        background-color: #030609 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -189,23 +191,23 @@ st.markdown("""
     }
 
     .glass-card {
-        background: rgba(7, 13, 19, 0.82) !important;
+        background: rgba(7, 13, 19, 0.90) !important;
         border: 1px solid rgba(0, 217, 217, 0.24) !important;
         border-radius: 14px !important;
         padding: 24px !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
     }
 
     .main-header {
-        background: linear-gradient(135deg, rgba(8, 15, 21, 0.9) 0%, rgba(4, 7, 11, 0.9) 100%) !important;
+        background: linear-gradient(135deg, rgba(8, 15, 21, 0.95) 0%, rgba(4, 7, 11, 0.95) 100%) !important;
         border: 1px solid rgba(0, 217, 217, 0.32) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
         backdrop-filter: blur(16px);
-        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.7);
+        box-shadow: 0 8px 35px rgba(0, 0, 0, 0.8);
     }
 
     .badge-pill {
@@ -230,12 +232,11 @@ st.markdown("""
     }
 
     div[data-testid="stMetric"] {
-        background: rgba(7, 13, 19, 0.84) !important;
+        background: rgba(7, 13, 19, 0.92) !important;
         border: 1px solid rgba(0, 217, 217, 0.22) !important;
         padding: 16px;
         border-radius: 12px;
-        backdrop-filter: blur(14px) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
     }
     div[data-testid="stMetricLabel"] p {
         color: #94a3b8 !important;
@@ -252,12 +253,11 @@ st.markdown("""
     }
 
     div[data-testid="stFileUploader"] {
-        background: rgba(7, 13, 19, 0.78) !important;
+        background: rgba(7, 13, 19, 0.85) !important;
         border: 1px dashed rgba(0, 217, 217, 0.42) !important;
         border-radius: 14px !important;
         padding: 18px !important;
-        backdrop-filter: blur(14px) !important;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5) !important;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6) !important;
     }
 
     button[data-baseweb="tab"] {
@@ -271,7 +271,7 @@ st.markdown("""
     }
 
     .pricing-card {
-        background: rgba(7, 13, 19, 0.84);
+        background: rgba(7, 13, 19, 0.92);
         border: 1px solid rgba(0, 217, 217, 0.22);
         border-radius: 14px;
         padding: 26px 22px;
@@ -279,10 +279,9 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        backdrop-filter: blur(14px);
     }
     .pricing-card-featured {
-        background: linear-gradient(180deg, rgba(11, 23, 32, 0.92) 0%, rgba(5, 9, 13, 0.92) 100%);
+        background: linear-gradient(180deg, rgba(11, 23, 32, 0.95) 0%, rgba(5, 9, 13, 0.95) 100%);
         border: 2px solid #00D9D9;
         box-shadow: 0 8px 32px rgba(0, 217, 217, 0.25);
         border-radius: 14px;
@@ -291,7 +290,6 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        backdrop-filter: blur(16px);
     }
     .pricing-price {
         font-size: 32px;
@@ -489,8 +487,11 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA ----------------
+# ---------------- CASO 1: PÁGINA INICIAL CORPORATIVA (COM TÚNEL IMERSIVO) ----------------
 if ficheiro_saft is None:
+    # Ativa o túnel 3D hiper-imersivo apenas na página inicial
+    injetar_fundo_tunel_imersivo()
+
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### Pilares de Inteligência Financeira e Fiscal:")
     col_h1, col_h2, col_h3 = st.columns(3)
@@ -528,7 +529,7 @@ if ficheiro_saft is None:
         </div>
         """, unsafe_allow_html=True)
 
-# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO ----------------
+# ---------------- CASO 2: PROCESSAMENTO E PAINEL EXECUTIVO (FUNDO ESTÁTICO LIMPO) ----------------
 else:
     try:
         bytes_data = ficheiro_saft.read()
