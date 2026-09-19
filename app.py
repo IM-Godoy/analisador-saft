@@ -547,11 +547,13 @@ else:
         total_docs = len(faturas_positivas)
         ticket_medio = fat_liquida / total_docs if total_docs > 0 else 0
 
-        # Análise de Concentração
-        df_clientes = df.groupby('Cliente')['ValorBruto'].sum().sort_values(ascending=False).reset_index()
-        top_cliente_nome = df_clientes.iloc[0]['Cliente'] if not df_clientes.empty else "N/D"
-        top_cliente_val = df_clientes.iloc[0]['ValorBruto'] if not df_clientes.empty else 0
-        concentracao_top1 = (top_cliente_val / fat_liquida * 100) if fat_liquida > 0 else 0
+        # Análise de Concentração (calculada sobre o volume bruto positivo para evitar distorções)
+        df_clientes_positivo = df[df['ValorBruto'] > 0].groupby('Cliente')['ValorBruto'].sum().sort_values(ascending=False).reset_index()
+        total_bruto_pos = df_clientes_positivo['ValorBruto'].sum()
+        
+        top_cliente_nome = df_clientes_positivo.iloc[0]['Cliente'] if not df_clientes_positivo.empty else "N/D"
+        top_cliente_val = df_clientes_positivo.iloc[0]['ValorBruto'] if not df_clientes_positivo.empty else 0
+        concentracao_top1 = (top_cliente_val / total_bruto_pos * 100) if total_bruto_pos > 0 else 0
 
         # NAVEGAÇÃO POR TABS
         tab_visao, tab_abc, tab_iva, tab_plano = st.tabs([
@@ -605,9 +607,8 @@ else:
             st.markdown("#### Segmentação Estratégica de Carteira (Regra 80/20)")
             st.caption("Classificação automática dos clientes que asseguram o volume financeiro da empresa.")
 
-            df_abc = df_clientes[df_clientes['ValorBruto'] > 0].copy()
-            total_rev_abc = df_abc['ValorBruto'].sum()
-            df_abc['% Receita'] = (df_abc['ValorBruto'] / total_rev_abc) * 100
+            df_abc = df_clientes_positivo.copy()
+            df_abc['% Receita'] = (df_abc['ValorBruto'] / total_bruto_pos) * 100 if total_bruto_pos > 0 else 0
             df_abc['% Acumulada'] = df_abc['% Receita'].cumsum()
 
             def classificar_pareto(perc_acum):
@@ -663,33 +664,33 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (DARK MODE)
+        # TAB 4: PLANOS & RELATÓRIO EXECUTIVO AVANÇADO (DARK MODE PROFISSIONAL)
         with tab_plano:
             st.markdown("#### 📄 Relatório Executivo Avançado (Pronto a Descarregar)")
-            st.caption("O relatório exportado foi reformulado num design corporativo Dark Mode de alto padrão, contendo todas as métricas detalhadas, matriz de risco e top de clientes.")
+            st.caption("Descarregue o relatório detalhado num layout corporativo Dark Mode de altíssimo nível, contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
             
-            # Geração das linhas detalhadas para o relatório rico
+            # Geração das linhas detalhadas de clientes para o relatório HTML rico
             html_linhas = ""
-            for _, row in df_clientes.head(20).iterrows():
-                p_cli = (row['ValorBruto'] / fat_liquida * 100) if fat_liquida > 0 else 0
+            for _, row in df_clientes_positivo.head(25).iterrows():
+                p_cli = (row['ValorBruto'] / total_bruto_pos * 100) if total_bruto_pos > 0 else 0
                 html_linhas += f"""
                 <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">{row['Cliente']}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; font-weight: 600; color: #00D9D9;">{row['ValorBruto']:,.2f} €</td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right;">{p_cli:.1f}%</td>
+                    <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); color: #f8fafc;">{row['Cliente']}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; font-weight: 600; color: #00D9D9;">{row['ValorBruto']:,.2f} €</td>
+                    <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; color: #cbd5e1;">{p_cli:.1f}%</td>
                 </tr>
                 """
 
-            # Geração do sumário de IVA para o relatório
+            # Geração do sumário de IVA para o relatório HTML
             html_iva_linhas = ""
             if not df_tax.empty:
                 df_tax_resumo = df_tax.groupby(['TaxCode', 'TaxRate'])[['Base', 'ValorIVA']].sum().reset_index()
                 for _, row in df_tax_resumo.iterrows():
                     html_iva_linhas += f"""
                     <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">{row['TaxCode']} ({row['TaxRate']:.1f}%)</td>
-                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right;">{row['Base']:,.2f} €</td>
-                        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; color: #00D9D9;">{row['ValorIVA']:,.2f} €</td>
+                        <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); color: #f8fafc;">{row['TaxCode']} ({row['TaxRate']:.1f}%)</td>
+                        <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; color: #cbd5e1;">{row['Base']:,.2f} €</td>
+                        <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: right; font-weight: 600; color: #00D9D9;">{row['ValorIVA']:,.2f} €</td>
                     </tr>
                     """
 
@@ -697,36 +698,41 @@ else:
             <html lang="pt">
             <head>
                 <meta charset="UTF-8">
-                <title>Relatório Executivo de Auditoria SAF-T</title>
+                <title>Relatório Executivo Avançado - SAF-T Intelligence Pro</title>
                 <style>
                     body {{ font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #030609; color: #f8fafc; padding: 40px; }}
-                    .container {{ max-width: 900px; margin: 0 auto; background: rgba(8, 14, 20, 0.95); border: 1px solid rgba(0, 217, 217, 0.3); border-radius: 16px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }}
-                    .header-top {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 217, 217, 0.2); padding-bottom: 20px; margin-bottom: 30px; }}
-                    .badge {{ background: rgba(0, 217, 217, 0.15); color: #00D9D9; border: 1px solid rgba(0, 217, 217, 0.4); padding: 4px 12px; font-size: 11px; font-weight: bold; border-radius: 99px; text-transform: uppercase; }}
-                    h1 {{ margin: 10px 0 0 0; font-size: 26px; color: #ffffff; }}
-                    p.sub {{ color: #94a3b8; font-size: 13px; margin-top: 4px; }}
-                    .kpis-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }}
-                    .kpi-card {{ background: rgba(4, 8, 12, 0.8); border: 1px solid rgba(0, 217, 217, 0.2); border-radius: 12px; padding: 18px; text-align: center; }}
-                    .kpi-card h4 {{ margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }}
-                    .kpi-card p {{ margin: 8px 0 0 0; font-size: 20px; font-weight: bold; color: #00D9D9; }}
-                    .section-title {{ font-size: 16px; font-weight: 700; color: #ffffff; margin: 30px 0 15px 0; border-left: 3px solid #00D9D9; padding-left: 10px; }}
+                    .container {{ max-width: 950px; margin: 0 auto; background: rgba(8, 14, 20, 0.95); border: 1px solid rgba(0, 217, 217, 0.3); border-radius: 16px; padding: 45px; box-shadow: 0 15px 50px rgba(0,0,0,0.85); }}
+                    .header-top {{ display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(0, 217, 217, 0.25); padding-bottom: 25px; margin-bottom: 35px; }}
+                    .badge {{ background: rgba(0, 217, 217, 0.15); color: #00D9D9; border: 1px solid rgba(0, 217, 217, 0.4); padding: 5px 14px; font-size: 11px; font-weight: bold; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.08em; }}
+                    h1 {{ margin: 12px 0 0 0; font-size: 28px; color: #ffffff; font-weight: 800; }}
+                    p.sub {{ color: #94a3b8; font-size: 13px; margin-top: 6px; }}
+                    .kpis-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 35px; }}
+                    .kpi-card {{ background: rgba(4, 8, 12, 0.85); border: 1px solid rgba(0, 217, 217, 0.22); border-radius: 12px; padding: 20px; text-align: center; backdrop-filter: blur(10px); }}
+                    .kpi-card h4 {{ margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }}
+                    .kpi-card p {{ margin: 8px 0 0 0; font-size: 22px; font-weight: 700; color: #00D9D9; text-shadow: 0 0 10px rgba(0, 217, 217, 0.25); }}
+                    .section-title {{ font-size: 16px; font-weight: 700; color: #ffffff; margin: 35px 0 15px 0; border-left: 3px solid #00D9D9; padding-left: 12px; }}
+                    .diagnostic-box {{ background: rgba(0, 217, 217, 0.05); border: 1px solid rgba(0, 217, 217, 0.2); border-radius: 10px; padding: 20px; margin-bottom: 30px; font-size: 14px; color: #cbd5e1; line-height: 1.6; }}
                     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }}
-                    th {{ background: rgba(0, 217, 217, 0.1); color: #00D9D9; padding: 10px; text-align: left; border-bottom: 2px solid rgba(0, 217, 217, 0.3); font-weight: 600; }}
-                    .footer {{ margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; text-align: center; font-size: 11px; color: #64748b; }}
+                    th {{ background: rgba(0, 217, 217, 0.12); color: #00D9D9; padding: 12px; text-align: left; border-bottom: 2px solid rgba(0, 217, 217, 0.4); font-weight: 600; letter-spacing: 0.5px; }}
+                    .footer {{ margin-top: 45px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; text-align: center; font-size: 11px; color: #64748b; }}
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="header-top">
                         <div>
-                            <span class="badge">SAF-T Intelligence Pro • Relatório Oficial</span>
+                            <span class="badge">⚡ SAF-T Intelligence Pro • Executive Report</span>
                             <h1>Auditoria Executiva e Diagnóstico Fiscal</h1>
-                            <p class="sub">Análise automatizada de volume de negócios, concentração de clientes e conferência de IVA.</p>
+                            <p class="sub">Relatório analítico avançado de faturação, concentração de carteira e conferência de IVA.</p>
                         </div>
                         <div style="text-align: right;">
                             <p style="font-size: 12px; color: #94a3b8; margin: 0;"><b>Moeda:</b> EUR</p>
-                            <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;"><b>Processamento:</b> 100% In-Memory (RGPD)</p>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;"><b>Conformidade:</b> 100% In-Memory (RGPD)</p>
                         </div>
+                    </div>
+
+                    <div class="diagnostic-box">
+                        <b>📌 Sumário Executivo de Gestão:</b> O volume de negócios líquido apurado no período atinge <b>{fat_liquida:,.2f} €</b>, com um ticket médio real por documento de <b>{ticket_medio:,.2f} €</b>. O índice de concentração do principal cliente situa-se em <b>{concentracao_top1:.1f}%</b>, e a taxa de anulação por notas de crédito é de <b>{taxa_nc:.2f}%</b>.
                     </div>
 
                     <div class="kpis-grid">
@@ -734,28 +740,28 @@ else:
                         <div class="kpi-card"><h4>Ticket Médio</h4><p>{ticket_medio:,.2f} €</p></div>
                         <div class="kpi-card"><h4>Risco Cliente Top 1</h4><p>{concentracao_top1:.1f}%</p></div>
                         <div class="kpi-card"><h4>Volume Bruto</h4><p>{fat_bruta:,.2f} €</p></div>
-                        <div class="kpi-card"><h4>Total Devoluções (NC)</h4><p>{total_nc:,.2f} € ({taxa_nc:.1f}%)</p></div>
+                        <div class="kpi-card"><h4>Total Devoluções (NC)</h4><p>{total_nc:,.2f} €</p></div>
                         <div class="kpi-card"><h4>Total IVA Liquidado</h4><p>{total_iva:,.2f} €</p></div>
                     </div>
 
-                    <div class="section-title">📊 Top Clientes da Carteira (Matriz de Concentração)</div>
+                    <div class="section-title">📊 Matriz de Concentração de Clientes (Top da Carteira)</div>
                     <table>
                         <thead>
-                            <tr><th>Designação do Cliente</th><th style="text-align: right;">Volume Total (€)</th><th style="text-align: right;">Peso Relativo (%)</th></tr>
+                            <tr><th>Designação do Cliente</th><th style="text-align: right;">Volume Faturado (€)</th><th style="text-align: right;">Peso na Receita (%)</th></tr>
                         </thead>
                         <tbody>{html_linhas}</tbody>
                     </table>
 
-                    <div class="section-title">⚖️ Apuramento e Conferência de IVA por Escalão</div>
+                    <div class="section-title">⚖️ Auditoria e Conferência de IVA por Escalão Tributário</div>
                     <table>
                         <thead>
-                            <tr><th>Código / Taxa de Imposto</th><th style="text-align: right;">Base Tributável (€)</th><th style="text-align: right;">IVA Liquidado (€)</th></tr>
+                            <tr><th>Código / Taxa Aplicada</th><th style="text-align: right;">Base Tributável (€)</th><th style="text-align: right;">IVA Liquidado (€)</th></tr>
                         </thead>
                         <tbody>{html_iva_linhas}</tbody>
                     </table>
 
                     <div class="footer">
-                        <p>Gerado automaticamente pela plataforma SAF-T Intelligence Pro • Documento confidencial para análise de gestão e apoio fiscal.</p>
+                        <p>Documento gerado automaticamente pela plataforma de inteligência fiscal <b>SAF-T Intelligence Pro</b> • Uso exclusivo para suporte à gestão empresarial e contabilidade.</p>
                     </div>
                 </div>
             </body>
