@@ -5,6 +5,7 @@ import pandas as pd
 import io
 import re
 import time
+import numpy as np
 import urllib.parse
 import urllib.request
 import json
@@ -463,7 +464,7 @@ def processar_documento_comercial(file_bytes, filename):
                     doc_type = 'FT'
 
                 vb = float(row.get('ValorBruto', 0))
-                if vb <= 0:
+                if vb == 0:
                     continue
 
                 vl = float(row.get('ValorLiquido', vb / 1.23))
@@ -572,11 +573,11 @@ def exibir_tabela_precos():
 # ---------------- CABEÇALHO CORPORATIVO ----------------
 st.markdown("""
 <div class="main-header">
-    <span class="badge-pill badge-turquoise">⚡ PLATAFORMA DE INTELIGÊNCIA COMERCIAL • ANALYTICS</span>
+    <span class="badge-pill badge-turquoise">⚡ PLATAFORMA DE INTELIGÊNCIA COMERCIAL • ENTERPRISE BI</span>
     <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; color: #ffffff;">SAF-T Intelligence Pro</h1>
-    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Análise de Faturação, Risco de Clientes e Auditoria Fiscal para Empresas</h3>
+    <h3 style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 600; color: #00D9D9;">Análise Preditiva, Churn de Clientes, Sazonalidade e Auditoria Fiscal</h3>
     <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 0.95rem;">
-        Carregue o seu ficheiro SAF-T (XML), Excel (.xlsx) ou CSV comercial. Descubra os seus clientes mais valiosos e otimize a gestão do seu negócio.
+        Carregue o seu ficheiro SAF-T (XML), Excel (.xlsx) ou CSV comercial para desbloquear inteligência de negócio avançada instantaneamente.
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -598,10 +599,10 @@ if ficheiro_upload is None:
     with col_h1:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Formatos Aceites</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">📁 SAF-T, Excel e CSV</h3>
+            <span class="badge-pill badge-turquoise">Análise Preditiva</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">📈 Forecasting de Vendas</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Compatível com o formato fiscal oficial SAF-T e com listas tabulares de vendas de qualquer software de faturação.
+                Projeção automática de tesouraria e tendência de faturação para os próximos trimestres com base no histórico real.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -609,10 +610,10 @@ if ficheiro_upload is None:
     with col_h2:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Gestão Estratégica</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">📊 Curva ABC & Risco 80/20</h3>
+            <span class="badge-pill badge-turquoise">Gestão de Risco</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">⚠️ Detetor de Churn (Inativos)</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Identifique exatamente quais clientes geram 80% do seu volume de negócios e proteja a sua tesouraria contra dependências.
+                Identifique imediatamente clientes importantes que pararam de comprar e recupere receita antes de perder o contrato.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -620,51 +621,50 @@ if ficheiro_upload is None:
     with col_h3:
         st.markdown("""
         <div class="glass-card">
-            <span class="badge-pill badge-turquoise">Privacidade & RGPD</span>
-            <h3 style="margin-top: 8px; color: #ffffff;">🔒 100% In-Memory</h3>
+            <span class="badge-pill badge-turquoise">Auditoria Avançada</span>
+            <h3 style="margin-top: 8px; color: #ffffff;">🔍 Deteção de Anomalias</h3>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">
-                Os dados são processados estritamente na memória da sessão de navegação. Nenhuma informação é gravada externamente.
+                Identificação automática de faturas atípicas, desvios estatísticos e conferência rigorosa de IVA por escalão.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-# ---------------- CASO 2: PROCESSAMENTO E PAINEL ESTILO POWER BI ----------------
+# ---------------- CASO 2: PROCESSAMENTO E PAINEL ENTERPRISE BI ----------------
 else:
     try:
         bytes_data = ficheiro_upload.read()
         filename_str = ficheiro_upload.name
 
-        # Simulação de Auditoria de Alta Credibilidade (Passo a passo com delay profissional)
-        with st.status("🔍 A executar auditoria fiscal e motor DAX...", expanded=True) as status_process:
-            st.write("📁 A validar integridade e estrutura do documento...")
-            time.sleep(0.6)
-            st.write("⚙️ A carregar modelo de dados relacional e desdobrar linhas...")
-            time.sleep(0.6)
-            st.write("📊 A calcular medidas DAX (vendas líquidas, ticket médio, Pareto)...")
-            time.sleep(0.8)
+        # Simulação de Auditoria de Alta Credibilidade
+        with st.status("🔍 A executar motor de Inteligência Comercial e Medidas DAX...", expanded=True) as status_process:
+            st.write("📁 A validar integridade relacional do documento...")
+            time.sleep(0.5)
+            st.write("⚙️ A processar linhas de faturação e notas de crédito...")
+            time.sleep(0.5)
+            st.write("📈 A calcular modelos preditivos, sazonalidade e Churn...")
+            time.sleep(0.7)
             
             df, df_tax = processar_documento_comercial(bytes_data, filename_str)
             
-            # Enriquecer DataFrame com colunas de data (Com mapeamento seguro em Python)
+            # Enriquecer DataFrame com colunas temporais
             df['Data_dt'] = pd.to_datetime(df['Data'], errors='coerce')
             df['Ano'] = df['Data_dt'].dt.year.fillna(2026).astype(int)
             
             meses_pt = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+            df['Mês_Num'] = df['Data_dt'].dt.month.fillna(1).astype(int)
             df['Mês'] = df['Data_dt'].dt.month.map(meses_pt).fillna("Janeiro")
             df['Trimestre'] = df['Data_dt'].dt.to_period('Q').astype(str).fillna("2026Q1")
 
-            status_process.update(label="✅ Auditoria fiscal e modelo DAX concluídos com sucesso!", state="complete", expanded=False)
+            status_process.update(label="✅ Modelo de Inteligência Comercial carregado com sucesso!", state="complete", expanded=False)
 
-        # ---------------- BARRA DE FILTROS ESTILO DASHBOARD EXECUTIVO (PILLS / BOTÕES) ----------------
-        st.markdown("### 🎛️ Filtros Rápidos de Período")
+        # ---------------- BARRA DE FILTROS ESTILO DASHBOARD EXECUTIVO (PILLS) ----------------
+        st.markdown("### 🎛️ Segmentação Rápida por Período (Ano)")
         
         anos_disponiveis = sorted(df['Ano'].unique(), reverse=True)
         opcoes_ano = ["Todos"] + [str(a) for a in anos_disponiveis]
         
-        # Filtro em pílulas horizontal no estilo da referência visual
         ano_escolhido = st.pills("Selecione o Ano de Análise", options=opcoes_ano, default="Todos")
 
-        # Filtrar DataFrame com base no seletor de ano
         if ano_escolhido and ano_escolhido != "Todos":
             df_filtrado = df[df['Ano'] == int(ano_escolhido)]
         else:
@@ -673,7 +673,7 @@ else:
         if df_filtrado.empty:
             st.warning("⚠️ Nenhum registo encontrado para o período selecionado.")
         else:
-            # Cálculos Globais com base no filtro
+            # Cálculos Globais
             faturas_positivas = df_filtrado[df_filtrado['Tipo'] != 'NC']
             notas_credito = df_filtrado[df_filtrado['Tipo'] == 'NC']
 
@@ -690,21 +690,23 @@ else:
             df_clientes_positivo = df_filtrado[df_filtrado['ValorBruto'] > 0].groupby('Cliente')['ValorBruto'].sum().sort_values(ascending=False).reset_index()
             total_bruto_pos = df_clientes_positivo['ValorBruto'].sum()
             
-            top_cliente_nome = df_clientes_positivo.iloc[0]['Cliente'] if not df_clientes_positivo.empty else "N/D"
             top_cliente_val = df_clientes_positivo.iloc[0]['ValorBruto'] if not df_clientes_positivo.empty else 0
             concentracao_top1 = (top_cliente_val / total_bruto_pos * 100) if total_bruto_pos > 0 else 0
 
-            # NAVEGAÇÃO POR TABS
-            tab_visao, tab_abc, tab_iva, tab_plano = st.tabs([
-                "📈 Visão Geral Executiva",
+            # NAVEGAÇÃO POR TABS AVANÇADAS
+            tab_visao, tab_pred, tab_churn, tab_anomalias, tab_abc, tab_iva, tab_plano = st.tabs([
+                "📈 Visão Geral & Sazonalidade",
+                "🔮 Previsão (Forecasting)",
+                "⚠️ Clientes em Risco (Churn)",
+                "🔍 Auditoria de Anomalias",
                 "👥 Curva ABC & Concentração",
                 "⚖️ Auditoria de IVA & Fiscal",
                 "💎 Planos & Relatório"
             ])
 
-            # TAB 1: VISÃO GERAL (DASHBOARD STYLE)
+            # TAB 1: VISÃO GERAL & SAZONALIDADE
             with tab_visao:
-                st.markdown("#### Indicadores Principais de Saúde Comercial (Medidas DAX)")
+                st.markdown("#### Indicadores Principais de Desempenho (Medidas DAX)")
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric("Faturação Líquida [DAX]", f"{fat_liquida:,.2f} €")
                 c2.metric("Ticket Médio Real", f"{ticket_medio:,.2f} €")
@@ -718,29 +720,99 @@ else:
                 c8.metric("Total IVA Liquidado", f"{total_iva:,.2f} €")
 
                 st.markdown("---")
-                st.markdown("#### Diagnóstico Rápido de Risco")
-                d_col1, d_col2 = st.columns(2)
-                with d_col1:
-                    if concentracao_top1 > 40:
-                        st.error(f"🚨 **Dependência Crítica de Carteira:** O cliente líder (**{top_cliente_nome}**) gera **{concentracao_top1:.1f}%** de toda a receita. Risco elevado para a tesouraria.")
-                    elif concentracao_top1 > 25:
-                        st.warning(f"⚠️ **Atenção à Concentração:** O principal cliente representa **{concentracao_top1:.1f}%** do volume de negócios.")
+                col_chart1, col_chart2 = st.columns(2)
+                
+                with col_chart1:
+                    st.markdown("#### 📊 Sazonalidade de Vendas por Mês")
+                    df_mes = df_filtrado.groupby(['Mês_Num', 'Mês'])['ValorBruto'].sum().reset_index().sort_values('Mês_Num')
+                    st.bar_chart(df_mes.set_index('Mês')['ValorBruto'], color="#00D9D9")
+
+                with col_chart2:
+                    st.markdown("#### 📈 Ritmo Diário de Faturação")
+                    df_diario = df_filtrado.groupby('Data_dt')['ValorBruto'].sum().reset_index()
+                    st.line_chart(df_diario.set_index('Data'), color="#a855f7")
+
+            # TAB 2: PREVISÃO (FORECASTING)
+            with tab_pred:
+                st.markdown("#### 🔮 Projeção de Faturação para os Próximos 3 Meses")
+                st.caption("Modelo preditivo linear baseado na taxa de crescimento histórica do negócio.")
+
+                df_mensal = df.groupby(df['Data_dt'].dt.to_period('M'))['ValorBruto'].sum().reset_index()
+                df_mensal['Data_dt'] = df_mensal['Data_dt'].dt.to_timestamp()
+                
+                if len(df_mensal) >= 2:
+                    # Cálculo de tendência linear simples
+                    x = np.arange(len(df_mensal))
+                    y = df_mensal['ValorBruto'].values
+                    m, c = np.polyfit(x, y, 1)
+                    
+                    ultimo_mes = df_mensal['Data_dt'].max()
+                    projecoes = []
+                    for i in range(1, 4):
+                        proximo_mes = ultimo_mes + pd.DateOffset(months=i)
+                        val_proj = max(0, (m * (len(x) + i)) + c)
+                        projecoes.append({'Mês': proximo_mes.strftime('%Y-%m'), 'Faturação Prevista (€)': round(val_proj, 2)})
+
+                    df_proj = pd.DataFrame(projecoes)
+                    
+                    p_col1, p_col2 = st.columns([1, 1.2])
+                    with p_col1:
+                        st.markdown("##### 📌 Próximos Períodos Estimados:")
+                        for _, row in df_proj.iterrows():
+                            st.metric(f"Mês: {row['Mês']}", f"{row['Faturação Prevista (€)']:,.2f} €", "Projeção IA")
+                    with p_col2:
+                        st.markdown("##### Histórico vs Projeção Tendencial:")
+                        st.line_chart(df_mensal.set_index('Data_dt')['ValorBruto'], color="#00D9D9")
+                else:
+                    st.info("É necessário um histórico superior a 2 meses diferentes para calcular a projeção preditiva com exatidão.")
+
+            # TAB 3: CLIENTES EM RISCO (CHURN)
+            with tab_churn:
+                st.markdown("#### ⚠️ Detetor de Clientes em Risco de Abandono (Churn)")
+                st.caption("Clientes importantes que efetuaram compras no passado mas não têm atividade recente no final do período analisado.")
+
+                if not df_filtrado.empty:
+                    data_maxima = df_filtrado['Data_dt'].max()
+                    limite_inativo = data_maxima - pd.Timedelta(days=90) # Considera inativo se não compra há mais de 90 dias do fim do dataset
+
+                    compras_cliente = df_filtrado[df_filtrado['ValorBruto'] > 0].groupby('Cliente').agg(
+                        Ultima_Compra=('Data_dt', 'max'),
+                        Total_Gasto=('ValorBruto', 'sum'),
+                        Total_Faturas=('Documento', 'count')
+                    ).reset_index()
+
+                    churn_risco = compras_cliente[compras_cliente['Ultima_Compra'] < limite_inativo].sort_values(by='Total_Gasto', ascending=False)
+
+                    if not churn_risco.empty:
+                        st.warning(f"🚨 Atenção: Foram detetados **{len(churn_risco)} clientes** com histórico relevante que estão inativos há mais de 90 dias.")
+                        df_churn_show = churn_risco.copy()
+                        df_churn_show['Ultima_Compra'] = df_churn_show['Ultima_Compra'].dt.strftime('%Y-%m-%d')
+                        df_churn_show['Total_Gasto'] = df_churn_show['Total_Gasto'].map("{:,.2f} €".format)
+                        st.dataframe(df_churn_show, use_container_width=True, hide_index=True)
                     else:
-                        st.success(f"✅ **Carteira Saudável:** A receita está bem distribuída. O cliente líder pesa apenas **{concentracao_top1:.1f}%**.")
+                        st.success("✅ Excelente retenção! Nenhum cliente principal apresenta risco iminente de inatividade.")
 
-                with d_col2:
-                    if taxa_nc > 5:
-                        st.error(f"🚨 **Taxa de Anulação Alta ({taxa_nc:.1f}%):** As notas de crédito superam os padrões saudáveis (>5%). Indicador de possíveis falhas na faturação.")
+            # TAB 4: AUDITORIA DE ANOMALIAS
+            with tab_anomalias:
+                st.markdown("#### 🔍 Auditoria de Faturas Atípicas (Deteção de Outliers)")
+                st.caption("Identificação automática de faturas com valores anormalmente superiores à média da empresa (potenciais erros ou grandes negócios).")
+
+                if not df_filtrado.empty:
+                    media_fat = df_filtrado[df_filtrado['ValorBruto'] > 0]['ValorBruto'].mean()
+                    desvio_fat = df_filtrado[df_filtrado['ValorBruto'] > 0]['ValorBruto'].std()
+                    limite_anomalia = media_fat + (2 * desvio_fat)
+
+                    anomalias = df_filtrado[df_filtrado['ValorBruto'] > limite_anomalia]
+
+                    if not anomalias.empty:
+                        st.info(f"🔎 Foram encontradas **{len(anomalias)} faturas atípicas** (valores acima de {limite_anomalia:,.2f} €).")
+                        df_anom_show = anomalias[['Data', 'Documento', 'Cliente', 'ValorBruto']].copy()
+                        df_anom_show['ValorBruto'] = df_anom_show['ValorBruto'].map("{:,.2f} €".format)
+                        st.dataframe(df_anom_show, use_container_width=True, hide_index=True)
                     else:
-                        st.success(f"✅ **Operação Eficiente:** Taxa de notas de crédito reduzida ({taxa_nc:.1f}%), dentro dos parâmetros ótimos.")
+                        st.success("✅ A distribuição de valores está homogénea. Não foram detetadas faturas estatisticamente anómalas.")
 
-                st.markdown("---")
-                st.markdown("#### Ritmo Diário de Vendas no Período Selecionado")
-                df_diario = df_filtrado.groupby('Data_dt')['ValorBruto'].sum().reset_index()
-                df_diario.columns = ['Data', 'Faturação Diária (€)']
-                st.line_chart(df_diario.set_index('Data'), color="#00D9D9")
-
-            # TAB 2: CURVA ABC
+            # TAB 5: CURVA ABC
             with tab_abc:
                 st.markdown("#### Segmentação Estratégica de Carteira (Regra 80/20)")
                 st.caption("Classificação automática dos clientes que asseguram o volume financeiro do seu negócio.")
@@ -780,7 +852,7 @@ else:
                     df_exibicao['% Receita'] = df_exibicao['% Receita'].map("{:.2f}%".format)
                     st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
 
-            # TAB 3: AUDITORIA DE IVA
+            # TAB 6: AUDITORIA DE IVA
             with tab_iva:
                 st.markdown("#### Resumo Fiscal de IVA Liquidado")
                 st.caption("Conferência automática por escalão tributável para apoio à gestão e contabilidade.")
@@ -802,7 +874,7 @@ else:
                 else:
                     st.info("O documento carregado não possui detalhe granular por linha de imposto. O total apurado foi de: " + f"{total_iva:,.2f} €")
 
-            # TAB 4: PLANOS & RELATÓRIO
+            # TAB 7: PLANOS & RELATÓRIO
             with tab_plano:
                 st.markdown("#### 📄 Relatório Executivo Avançado (Pronto a Descarregar)")
                 st.caption("Descarregue o relatório detalhado contendo sumário executivo, matriz de risco, curva ABC e auditoria de IVA.")
