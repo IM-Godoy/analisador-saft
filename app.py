@@ -1,11 +1,9 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import xml.etree.ElementTree as ET
 import pandas as pd
 import urllib.parse
 import urllib.request
 import json
-import base64
 import os
 
 st.set_page_config(
@@ -15,114 +13,73 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- LEITURA LOCAL DO VÍDEO EM BASE64 ----------------
-def obter_video_base64():
-    nome_ficheiro = "background.mp4"
-    if os.path.exists(nome_ficheiro):
-        with open(nome_ficheiro, "rb") as f:
-            dados = f.read()
-        return base64.b64encode(dados).decode("utf-8")
-    return None
+# ---------------- VÍDEO DE FUNDO NATIVO STREAMLIT (LOCAL + CDN FALLBACK) ----------------
+ficheiro_local = "background.mp4"
+if not os.path.exists(ficheiro_local):
+    ficheiro_local = os.path.join(os.path.dirname(__file__), "background.mp4")
 
-def injetar_fundo_video():
-    b64_video = obter_video_base64()
-    
-    if not b64_video:
-        # Fallback de segurança se o ficheiro ainda estiver a sincronizar
-        st.warning("A carregar ficheiro de vídeo de fundo...")
-        return
+# Se o ficheiro local existir usa-o diretamente; caso contrário usa a CDN rápida do jsDelivr
+fonte_video = ficheiro_local if os.path.exists(ficheiro_local) else "https://cdn.jsdelivr.net/gh/IM-Godoy/analisador-saft@main/background.mp4"
 
-    video_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            html, body {{
-                width: 100vw;
-                height: 100vh;
-                overflow: hidden;
-                background: #010304;
-            }}
-            .video-background {{
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                min-width: 100%;
-                min-height: 100%;
-                width: auto;
-                height: auto;
-                transform: translate(-50%, -50%);
-                z-index: -9999;
-                object-fit: cover;
-                filter: brightness(0.65) contrast(1.15);
-            }}
-            .overlay-vignette {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                z-index: -9998;
-                background: radial-gradient(circle at center, rgba(1, 3, 4, 0.2) 20%, rgba(1, 3, 4, 0.85) 100%);
-                pointer-events: none;
-            }}
-        </style>
-    </head>
-    <body>
-        <video class="video-background" autoplay loop muted playsinline id="bg-video">
-            <source src="data:video/mp4;base64,{b64_video}" type="video/mp4">
-        </video>
-        <div class="overlay-vignette"></div>
-        <script>
-            const v = document.getElementById('bg-video');
-            if (v) {{
-                v.muted = true;
-                v.play().catch(function(e) {{
-                    console.log("Autoplay:", e);
-                }});
-            }}
-        </script>
-    </body>
-    </html>
-    """
-    components.html(video_html, height=0)
+try:
+    st.video(fonte_video, autoplay=True, loop=True, muted=True)
+except TypeError:
+    st.video(fonte_video)
 
-injetar_fundo_video()
-
-# ---------------- ESTILOS VISUAIS: DARK GLASSMORPHISM TURQUESA ----------------
+# ---------------- ESTILOS VISUAIS: FULLSCREEN BACKGROUND & GLASSMORPHISM ----------------
 st.markdown("""
     <style>
-    /* 1. Transparência Global */
-    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
+    /* 1. Transparência total em todos os contentores nativos do Streamlit */
+    html, body, .stApp, 
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stHeader"], 
+    .main, section.main {
         background: transparent !important;
+        background-color: transparent !important;
     }
     body {
-        background-color: #010304 !important;
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    div[data-testid="stCustomComponentV1"],
-    iframe {
+    /* 2. Fixa o vídeo em tela cheia (100vw / 100vh) no fundo absoluto */
+    div:has(> div[data-testid="stVideo"]),
+    .element-container:has(div[data-testid="stVideo"]),
+    div[data-testid="stVideo"] {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        z-index: -9999 !important;
-        border: none !important;
-        pointer-events: none !important;
+        z-index: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-
-    .element-container:has(div[data-testid="stCustomComponentV1"]) {
-        position: absolute !important;
-        height: 0px !important;
+        pointer-events: none !important;
         overflow: hidden !important;
     }
 
+    div[data-testid="stVideo"] video {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        transform: translate(-50%, -50%) !important;
+        object-fit: cover !important;
+        /* Filtro cinematográfico para manter legibilidade das tabelas */
+        filter: brightness(0.60) contrast(1.15) !important;
+        pointer-events: none !important;
+    }
+
+    /* Esconder controlos nativos do vídeo */
+    div[data-testid="stVideo"] video::-webkit-media-controls,
+    div[data-testid="stVideo"] video::-webkit-media-controls-enclosure {
+        display: none !important;
+    }
+
+    /* 3. Camada do conteúdo sempre por cima do vídeo */
     .block-container {
         position: relative !important;
         z-index: 10 !important;
@@ -130,10 +87,10 @@ st.markdown("""
         padding-top: 2rem !important;
     }
 
-    /* 2. Cartões Glassmorphism com Efeito de Vidro Escuro */
+    /* 4. Cartões Glassmorphism de Alto Contraste */
     .glass-card {
-        background: rgba(4, 8, 10, 0.84) !important;
-        border: 1px solid rgba(0, 217, 217, 0.24) !important;
+        background: rgba(4, 8, 10, 0.85) !important;
+        border: 1px solid rgba(0, 217, 217, 0.28) !important;
         border-radius: 14px !important;
         padding: 24px !important;
         backdrop-filter: blur(16px) !important;
@@ -143,7 +100,7 @@ st.markdown("""
 
     .main-header {
         background: linear-gradient(135deg, rgba(5, 10, 13, 0.92) 0%, rgba(2, 4, 6, 0.92) 100%) !important;
-        border: 1px solid rgba(0, 217, 217, 0.32) !important;
+        border: 1px solid rgba(0, 217, 217, 0.35) !important;
         border-radius: 16px;
         padding: 26px;
         margin-bottom: 24px;
@@ -162,9 +119,9 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .badge-turquoise { 
-        background: rgba(0, 217, 217, 0.14); 
+        background: rgba(0, 217, 217, 0.16); 
         color: #00D9D9; 
-        border: 1px solid rgba(0, 217, 217, 0.38); 
+        border: 1px solid rgba(0, 217, 217, 0.4); 
     }
     .badge-purple { 
         background: rgba(168, 85, 247, 0.15); 
@@ -172,10 +129,10 @@ st.markdown("""
         border: 1px solid rgba(168, 85, 247, 0.3); 
     }
 
-    /* 3. Cartões de Métricas */
+    /* 5. Cartões de Métricas */
     div[data-testid="stMetric"] {
-        background: rgba(4, 8, 10, 0.85) !important;
-        border: 1px solid rgba(0, 217, 217, 0.22) !important;
+        background: rgba(4, 8, 10, 0.86) !important;
+        border: 1px solid rgba(0, 217, 217, 0.24) !important;
         padding: 16px;
         border-radius: 12px;
         backdrop-filter: blur(14px) !important;
@@ -195,17 +152,17 @@ st.markdown("""
         text-shadow: 0 0 12px rgba(0, 217, 217, 0.25);
     }
 
-    /* 4. Caixa de Carregamento de Ficheiros */
+    /* 6. Caixa de Carregamento de Ficheiros */
     div[data-testid="stFileUploader"] {
-        background: rgba(4, 8, 10, 0.80) !important;
-        border: 1px dashed rgba(0, 217, 217, 0.42) !important;
+        background: rgba(4, 8, 10, 0.82) !important;
+        border: 1px dashed rgba(0, 217, 217, 0.45) !important;
         border-radius: 14px !important;
         padding: 18px !important;
         backdrop-filter: blur(14px) !important;
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.55) !important;
     }
 
-    /* 5. Separadores / Tabs */
+    /* 7. Separadores / Tabs */
     button[data-baseweb="tab"] {
         background: transparent !important;
         color: #94a3b8 !important;
@@ -216,10 +173,10 @@ st.markdown("""
         border-bottom-color: #00D9D9 !important;
     }
 
-    /* 6. Cartões de Planos / Preços Corporativos */
+    /* 8. Cartões de Planos / Preços */
     .pricing-card {
-        background: rgba(4, 8, 10, 0.85);
-        border: 1px solid rgba(0, 217, 217, 0.22);
+        background: rgba(4, 8, 10, 0.86);
+        border: 1px solid rgba(0, 217, 217, 0.24);
         border-radius: 14px;
         padding: 26px 22px;
         height: 100%;
