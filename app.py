@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import xml.etree.ElementTree as ET
 import pandas as pd
 import urllib.parse
@@ -15,7 +16,6 @@ st.set_page_config(
 # ---------------- ESTILOS VISUAIS PREMIUM (DARK SAAS) ----------------
 st.markdown("""
     <style>
-    /* Estilo Geral de Cabeçalho */
     .main-header {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border: 1px solid #334155;
@@ -38,7 +38,6 @@ st.markdown("""
     .badge-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
     .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
 
-    /* Cartões de Métricas */
     div[data-testid="stMetric"] {
         background-color: #1e293b;
         border: 1px solid #334155;
@@ -57,16 +56,14 @@ st.markdown("""
         font-weight: 700;
     }
 
-    /* Cartões de Funcionalidade da Hero */
     .hero-card {
         background: #1e293b;
         border: 1px solid #334155;
         border-radius: 12px;
-        padding: 22px;
+        padding: 24px;
         height: 100%;
     }
 
-    /* Cartões de Preço / Pricing Cards */
     .pricing-card {
         background: #1e293b;
         border: 1px solid #334155;
@@ -118,6 +115,161 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+# ---------------- COMPONENTE 3D WEBGL FUTURÍSTICO ----------------
+def render_3d_hero():
+    canvas_3d_code = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+            #container-3d {
+                width: 100%;
+                height: 290px;
+                position: relative;
+                border-radius: 14px;
+                background: radial-gradient(circle at center, #1e293b 0%, #0b1329 100%);
+                border: 1px solid #334155;
+                box-shadow: inset 0 0 40px rgba(56, 189, 248, 0.05);
+            }
+            .hud-overlay {
+                position: absolute;
+                top: 14px;
+                left: 18px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                font-size: 11px;
+                font-weight: 700;
+                color: #38bdf8;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                background: rgba(15, 23, 42, 0.7);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+                padding: 4px 12px;
+                border-radius: 20px;
+                pointer-events: none;
+            }
+            .hud-right {
+                position: absolute;
+                bottom: 14px;
+                right: 18px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                font-size: 11px;
+                color: #94a3b8;
+                pointer-events: none;
+            }
+            canvas { display: block; width: 100%; height: 100%; }
+        </style>
+    </head>
+    <body>
+        <div id="container-3d">
+            <div class="hud-overlay">● Motor Neural SAF-T • Visualização 3D Ativa</div>
+            <div class="hud-right">✦ Arraste o rato para interagir</div>
+            <canvas id="webgl-canvas"></canvas>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script>
+            const container = document.getElementById('container-3d');
+            const canvas = document.getElementById('webgl-canvas');
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Núcleo Geométrico Exterior (Holograma de Faturação)
+            const outerGeo = new THREE.IcosahedronGeometry(2.3, 2);
+            const outerMat = new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.38
+            });
+            const outerSphere = new THREE.Mesh(outerGeo, outerMat);
+            scene.add(outerSphere);
+
+            // Núcleo Interior Pulsante (Roxo Fintech)
+            const innerGeo = new THREE.OctahedronGeometry(1.3, 1);
+            const innerMat = new THREE.MeshBasicMaterial({
+                color: 0xa855f7,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.65
+            });
+            const innerCore = new THREE.Mesh(innerGeo, innerMat);
+            scene.add(innerCore);
+
+            // Nuvem de Partículas / Transações Financeiras Flutuantes
+            const particleCount = 160;
+            const particleGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+
+            for(let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 8.5;
+                positions[i+1] = (Math.random() - 0.5) * 4.5;
+                positions[i+2] = (Math.random() - 0.5) * 6;
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const particleMat = new THREE.PointsMaterial({
+                color: 0x38bdf8,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.8
+            });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+
+            camera.position.z = 6.2;
+
+            // Interação suave com o rato
+            let mouseX = 0, mouseY = 0;
+            let targetX = 0, targetY = 0;
+
+            window.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                mouseX = ((e.clientX - rect.left) / container.clientWidth - 0.5) * 2;
+                mouseY = -((e.clientY - rect.top) / container.clientHeight - 0.5) * 2;
+            });
+
+            // Loop de Animação 3D contínua
+            function animate() {
+                requestAnimationFrame(animate);
+
+                outerSphere.rotation.x += 0.003;
+                outerSphere.rotation.y += 0.005;
+
+                innerCore.rotation.x -= 0.005;
+                innerCore.rotation.y -= 0.007;
+
+                particles.rotation.y += 0.001;
+
+                targetX += (mouseX * 1.2 - targetX) * 0.05;
+                targetY += (mouseY * 0.8 - targetY) * 0.05;
+
+                camera.position.x = targetX;
+                camera.position.y = targetY;
+                camera.lookAt(scene.position);
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Responsividade
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        </script>
+    </body>
+    </html>
+    """
+    components.html(canvas_3d_code, height=305)
 
 # ---------------- MOTOR DE PROCESSAMENTO SAF-T ----------------
 def corrigir_texto(texto):
@@ -201,45 +353,42 @@ def processar_saft_completo(xml_bytes):
 
     return pd.DataFrame(dados_faturas), pd.DataFrame(dados_iva)
 
-# ---------------- FUNÇÃO PARA EXIBIR A TABELA DE PREÇOS MODERNA ----------------
 def exibir_tabela_precos():
-    st.markdown("### 💎 Planos & Preços Transparentes")
-    st.markdown("Escolha a opção ideal para a sua empresa ou para a carteira de clientes do seu gabinete de contabilidade.")
+    st.markdown("### 💎 Planos de Acompanhamento Mensal")
+    st.markdown("Gostou do diagnóstico? Disponibilizamos acompanhamento contínuo para a sua empresa ou para toda a carteira do seu gabinete:")
     
     col_p1, col_p2, col_p3 = st.columns(3)
 
-    # Plano 1: Grátis
     with col_p1:
         st.markdown("""
         <div class="pricing-card">
             <div>
-                <span class="badge-pill badge-blue">Para Testes</span>
-                <h3 style="margin: 0; color: #f8fafc;">Diagnóstico Pontual</h3>
+                <span class="badge-pill badge-blue">Diagnóstico</span>
+                <h3 style="margin: 0; color: #f8fafc;">Acesso Gratuito</h3>
                 <div class="pricing-price">0 €</div>
-                <div class="pricing-sub">Gratuito para sempre</div>
+                <div class="pricing-sub">Para testes individuais pontuais</div>
                 <ul class="feature-list">
-                    <li><span class="check-icon">✓</span> Leitura instantânea de 1 SAF-T</li>
-                    <li><span class="check-icon">✓</span> KPIs de Faturação Líquida e Ticket Médio</li>
-                    <li><span class="check-icon">✓</span> Detetor básico de Concentração Top 1</li>
-                    <li><span class="check-icon">✓</span> Relatório executivo básico em ecrã</li>
+                    <li><span class="check-icon">✓</span> Leitura e visualização do SAF-T</li>
+                    <li><span class="check-icon">✓</span> KPIs essenciais de faturação</li>
+                    <li><span class="check-icon">✓</span> Curva ABC e Alertas no ecrã</li>
+                    <li><span class="check-icon">✓</span> Relatório de 1 página</li>
                 </ul>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.button("Plano Atual (Carregue SAF-T)", disabled=True, key="btn_free")
+        st.button("Plano Ativo no Ecrã", disabled=True, key="btn_free_tab")
 
-    # Plano 2: PME Gestão
     with col_p2:
         st.markdown("""
         <div class="pricing-card">
             <div>
-                <span class="badge-pill badge-green">Para Empresas</span>
+                <span class="badge-pill badge-green">Empresas</span>
                 <h3 style="margin: 0; color: #f8fafc;">PME Gestão</h3>
                 <div class="pricing-price">29 € <span style="font-size: 15px; color: #94a3b8; font-weight: normal;">/mês</span></div>
-                <div class="pricing-sub">Acompanhamento contínuo da empresa</div>
+                <div class="pricing-sub">Acompanhamento executivo mensal</div>
                 <ul class="feature-list">
                     <li><span class="check-icon">✓</span> <b>Tudo do plano gratuito</b></li>
-                    <li><span class="check-icon">✓</span> Análise Mensal Automatizada por E-mail</li>
+                    <li><span class="check-icon">✓</span> Análise Mensal Automática via E-mail</li>
                     <li><span class="check-icon">✓</span> <b>Relatório Homólogo</b> (Mês vs Mês Anterior)</li>
                     <li><span class="check-icon">✓</span> Detetor de Perda de Clientes (Churn)</li>
                     <li><span class="check-icon">✓</span> Alertas de Risco de Tesouraria no WhatsApp</li>
@@ -249,9 +398,8 @@ def exibir_tabela_precos():
         """, unsafe_allow_html=True)
         msg_pme = "Olá! Gostaria de subscrever o Plano PME Gestão (29€/mês) para a minha empresa."
         url_pme = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_pme)}"
-        st.link_button("🚀 Subscrever Plano PME (29€)", url_pme, use_container_width=True)
+        st.link_button("🚀 Subscrever PME Gestão (29€)", url_pme, use_container_width=True)
 
-    # Plano 3: Gabinete Pro (Destaque)
     with col_p3:
         st.markdown("""
         <div class="pricing-card-featured">
@@ -261,16 +409,16 @@ def exibir_tabela_precos():
                 <div class="pricing-price">79 € <span style="font-size: 15px; color: #38bdf8; font-weight: normal;">/mês</span></div>
                 <div class="pricing-sub">Para Gabinetes de Contabilidade & TOCs</div>
                 <ul class="feature-list">
-                    <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b> incluídas</li>
+                    <li><span class="check-icon">✓</span> <b>Até 30 empresas da carteira</b></li>
                     <li><span class="check-icon">✓</span> <b>White-Label:</b> Relatórios com o logótipo do gabinete</li>
                     <li><span class="check-icon">✓</span> Mapa de Auditoria de IVA para apoio fiscal</li>
-                    <li><span class="check-icon">✓</span> Exportação executiva em 1 clique para enviar aos clientes</li>
-                    <li><span class="check-icon">✓</span> Suporte prioritário dedicado por WhatsApp</li>
+                    <li><span class="check-icon">✓</span> Exportação executiva para enviar aos clientes</li>
+                    <li><span class="check-icon">✓</span> Suporte dedicado via WhatsApp</li>
                 </ul>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        msg_gab = "Olá! Gostaria de ativar o Plano Gabinete Pro (79€/mês) para a carteira de clientes do meu gabinete."
+        msg_gab = "Olá! Gostaria de ativar o Plano Gabinete Pro (79€/mês) para o meu gabinete de contabilidade."
         url_gab = f"https://wa.me/351935009099?text={urllib.parse.quote(msg_gab)}"
         st.link_button("⭐ Aderir ao Gabinete Pro (79€)", url_gab, type="primary", use_container_width=True)
 
@@ -287,9 +435,12 @@ st.markdown("""
 
 ficheiro_saft = st.file_uploader("📂 Arraste ou selecione o ficheiro SAF-T (.xml) da empresa", type=["xml"])
 
-# ---------------- CASO 1: PÁGINA INICIAL (ANTES DO UPLOAD) ----------------
+# ---------------- CASO 1: PÁGINA INICIAL COM O GRÁFICO 3D FUTURÍSTICO ----------------
 if ficheiro_saft is None:
-    st.markdown("### Porquê analisar o SAF-T com a nossa plataforma?")
+    # GRÁFICO 3D ANIMADO NO TOPO DA PÁGINA INICIAL
+    render_3d_hero()
+
+    st.markdown("### Diagnóstico financeiro instantâneo em 3 pilares:")
     col_h1, col_h2, col_h3 = st.columns(3)
 
     with col_h1:
@@ -298,7 +449,7 @@ if ficheiro_saft is None:
             <span class="badge-pill badge-green">Segurança Máxima</span>
             <h3 style="margin-top: 5px; color: #f8fafc;">🔒 100% Confidencial</h3>
             <p style="color: #94a3b8; font-size: 14px;">
-                Os ficheiros são processados na memória volátil do navegador. Nenhum dado financeiro ou fiscal é armazenado em bases de dados externas.
+                Os ficheiros são processados exclusivamente na memória volátil durante a sessão. Nenhum dado fiscal, cliente ou valor é gravado em servidores ou bases de dados externas.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -325,9 +476,7 @@ if ficheiro_saft is None:
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    # TABELA DE PREÇOS NA HOME PAGE
-    exibir_tabela_precos()
+    st.info("👆 **Comece já:** Selecione ou arraste um ficheiro SAF-T (.xml) acima para ver o diagnóstico completo.")
 
 # ---------------- CASO 2: FICHEIRO CARREGADO COM SUCESSO ----------------
 else:
@@ -362,7 +511,7 @@ else:
             "💎 Planos & Relatório"
         ])
 
-        # ---------------- TAB 1: VISÃO GERAL ----------------
+        # TAB 1: VISÃO GERAL
         with tab_visao:
             st.markdown("#### Indicadores Principais de Saúde Comercial")
             c1, c2, c3, c4 = st.columns(4)
@@ -401,7 +550,7 @@ else:
             df_diario.columns = ['Data', 'Faturação Diária (€)']
             st.line_chart(df_diario.set_index('Data'), color="#38bdf8")
 
-        # ---------------- TAB 2: CURVA ABC (PARETO) ----------------
+        # TAB 2: CURVA ABC
         with tab_abc:
             st.markdown("#### Classificação de Clientes por Importância Estratégica (Regra 80/20)")
             st.caption("Segmentação automática dos clientes que sustentam o volume financeiro da empresa.")
@@ -442,7 +591,7 @@ else:
                 df_exibicao['% Receita'] = df_exibicao['% Receita'].map("{:.2f}%".format)
                 st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
 
-        # ---------------- TAB 3: AUDITORIA FISCAL & IVA ----------------
+        # TAB 3: AUDITORIA DE IVA
         with tab_iva:
             st.markdown("#### Resumo Fiscal de IVA Liquidado")
             st.caption("Conferência automática por escalão tributável para gabinetes de contabilidade e TOCs.")
@@ -464,7 +613,7 @@ else:
             else:
                 st.info("O ficheiro SAF-T carregado não possui detalhe granular por linha de imposto. O total apurado no documento foi de: " + f"{total_iva:,.2f} €")
 
-        # ---------------- TAB 4: PLANOS & RELATÓRIO ----------------
+        # TAB 4: PLANOS & RELATÓRIO
         with tab_plano:
             st.markdown("#### 📄 Relatório Executivo do SAF-T Carregado")
             
@@ -523,7 +672,6 @@ else:
             )
 
             st.markdown("---")
-            # TABELA DE PREÇOS DENTRO DO SEPARADOR
             exibir_tabela_precos()
 
             st.markdown("---")
